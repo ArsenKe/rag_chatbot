@@ -1,11 +1,4 @@
-╔════════════════════════════════════════════════════════════════════════════╗
-║                                                                            ║
-║          ROYAL E-CARS CHATBOT - IMPLEMENTATION COMPLETE ✅                 ║
-║                                                                            ║
-║       A Production-Ready RAG-Powered WhatsApp Chatbot System              ║
-║                                                                            ║
-╚════════════════════════════════════════════════════════════════════════════╝
-
+ROYAL E-CARS CHATBOT - IMPLEMENTATION COMPLETE
 
 PROJECT OVERVIEW
 ════════════════════════════════════════════════════════════════════════════════

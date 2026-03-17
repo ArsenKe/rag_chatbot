@@ -1,0 +1,412 @@
+ROYAL E-CARS CHATBOT - SYSTEM ARCHITECTURE DIAGRAMS
+═══════════════════════════════════════════════════════════════════════════════
+
+
+1. MESSAGE FLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════════════════
+
+    ┌──────────────────┐
+    │  WhatsApp User   │
+    │ Sends Message    │
+    │"Welche Fahrzeuge?│
+    └────────┬─────────┘
+             │
+             ↓
+    ┌────────────────────────────┐
+    │  Twilio API Gateway        │
+    │  Receives WhatsApp Message │
+    └────────┬───────────────────┘
+             │
+             ↓
+    ┌────────────────────────────┐
+    │  FastAPI Webhook Endpoint  │
+    │  POST /whatsapp/webhook    │
+    └────────┬───────────────────┘
+             │
+             ↓
+    ┌────────────────────────────┐
+    │  Message Handler           │
+    │  - Extract From/Body       │
+    │  - Parse payload           │
+    └────────┬───────────────────┘
+             │
+             ↓
+    ┌────────────────────────────────────────┐
+    │  RAG PIPELINE                          │
+    ├────────────────────────────────────────┤
+    │                                        │
+    │  Step 1: Query Embedding               │
+    │  ┌──────────────────┐                 │
+    │  │ Generate Embedding│                │
+    │  │ OpenAI API       │                 │
+    │  │ Input: Question  │                 │
+    │  │ Output: Vector   │                 │
+    │  └──────────────────┘                 │
+    │          │                             │
+    │          ↓                             │
+    │  Step 2: Vector Search                │
+    │  ┌──────────────────┐                 │
+    │  │ Chroma DB        │                 │
+    │  │ Similarity Search│                 │
+    │  │ Cosine Distance  │                 │
+    │  └──────────────────┘                 │
+    │          │                             │
+    │          ↓                             │
+    │  Step 3: Retrieve Context             │
+    │  ┌──────────────────┐                 │
+    │  │ Top 5 Documents  │                 │
+    │  │ + Metadata       │                 │
+    │  │ + Scores         │                 │
+    │  └──────────────────┘                 │
+    │          │                             │
+    │          ↓                             │
+    │  Step 4: Build Prompt                 │
+    │  ┌──────────────────┐                 │
+    │  │ Context +        │                 │
+    │  │ Question +       │                 │
+    │  │ System Message   │                 │
+    │  └──────────────────┘                 │
+    │          │                             │
+    │          ↓                             │
+    │  Step 5: LLM Generation               │
+    │  ┌──────────────────┐                 │
+    │  │ OpenAI GPT-3.5   │                 │
+    │  │ Temperature: 0.7 │                 │
+    │  │ Max Tokens: 500  │                 │
+    │  └──────────────────┘                 │
+    │          │                             │
+    │          ↓                             │
+    │  Step 6: Format Response              │
+    │  ┌──────────────────┐                 │
+    │  │ Generated Text   │                 │
+    │  │ + Sources        │                 │
+    │  │ + Booking Link   │                 │
+    │  └──────────────────┘                 │
+    │                                        │
+    └────────┬───────────────────────────────┘
+             │
+             ↓
+    ┌────────────────────────────┐
+    │  Twilio Client             │
+    │  Send WhatsApp Messages    │
+    │  - Main response           │
+    │  - Booking link (optional) │
+    └────────┬───────────────────┘
+             │
+             ↓
+    ┌────────────────────────────────────┐
+    │  WhatsApp User                     │
+    │  Receives Response:                │
+    │  "Royal E-Cars bietet Tesla S...   │
+    │   🔗 Buchen: royal-ecars.com..."   │
+    └────────────────────────────────────┘
+
+
+2. MODULE ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+                          ┌──────────────────┐
+                          │   FastAPI App    │
+                          │  (main.py)       │
+                          └────────┬─────────┘
+                                   │
+                 ┌─────────────────┼─────────────────┐
+                 │                 │                 │
+                 ↓                 ↓                 ↓
+        ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+        │ Webhooks     │  │ Health Check │  │ Config       │
+        │ /whatsapp/   │  │ /health      │  │ settings     │
+        │  webhook     │  │              │  │              │
+        └──────┬───────┘  └──────────────┘  └──────────────┘
+               │
+               ↓
+        ┌──────────────────────────────────────┐
+        │  Message Handler                     │
+        │  (modules/whatsapp/              │
+        │   message_handler.py)                │
+        └────────┬─────────────────────────────┘
+                 │
+    ┌────────────┼────────────┐
+    │            │            │
+    ↓            ↓            ↓
+┌─────────┐ ┌──────────┐ ┌─────────────┐
+│ Embeddings│ │Retriever │ │ Twilio API │
+│ Generate  │ │ Search   │ │ Send Msg  │
+│ OpenAI    │ │ Chroma   │ │            │
+└─────┬─────┘ └────┬─────┘ └─────────────┘
+      │            │
+      └─────┬──────┘
+            │
+            ↓
+      ┌──────────────────┐
+      │ QA Chain         │
+      │ (qa_chain.py)    │
+      │                  │
+      │ 1. Format prompt │
+      │ 2. Call OpenAI   │
+      │ 3. Generate      │
+      │ 4. Return answer │
+      └────────┬─────────┘
+               │
+               ↓
+        ┌─────────────────┐
+        │ Vector Store    │
+        │ (Chroma DB)     │
+        │                 │
+        │ Collections:    │
+        │ Documents +     │
+        │ Embeddings +    │
+        │ Metadata        │
+        └─────────────────┘
+
+
+3. DATA FLOW - VECTOR DB
+═══════════════════════════════════════════════════════════════════════════════
+
+    SOURCE DATA
+    ───────────────────────────────────────────────────────
+    Website Content │ PDFs │ Documents │ FAQs
+
+              │
+              ↓
+    ┌─────────────────────────────────┐
+    │  INGESTION PIPELINE             │
+    ├─────────────────────────────────┤
+    │                                 │
+    │  Scraper.py                     │
+    │  └─→ Extract HTML/Text          │
+    │      BeautifulSoup              │
+    │      Requests Library           │
+    │                                 │
+    │  Chunker.py                     │
+    │  └─→ Split into 500 char chunks │
+    │      with 50 char overlap       │
+    │                                 │
+    │  Embeddings.py                  │
+    │  └─→ Generate vectors           │
+    │      OpenAI API                 │
+    │      1536 dimensions            │
+    │                                 │
+    │  Vector Store.py                │
+    │  └─→ Store in Chroma DB         │
+    │      with metadata              │
+    │                                 │
+    └────────────┬────────────────────┘
+                 │
+                 ↓
+    ┌──────────────────────────────┐
+    │  CHROMA VECTOR DATABASE      │
+    ├──────────────────────────────┤
+    │                              │
+    │  Collection:                 │
+    │  royal_ecars_documents       │
+    │                              │
+    │  Document 1:                 │
+    │  ├─ ID: doc_1               │
+    │  ├─ Content: "Royal E-Cars.."│
+    │  ├─ Embedding: [0.12, ...]  │
+    │  └─ Metadata:                │
+    │     ├─ source: URL           │
+    │     ├─ category: fleet       │
+    │     ├─ language: de          │
+    │     └─ date: 2024-01-21      │
+    │                              │
+    │  Document 2: [booking_info]  │
+    │  Document 3: [services]      │
+    │  Document 4: [faqs]          │
+    │                              │
+    └──────────────────────────────┘
+
+    QUERY TIME
+    ───────────────────────────────────────────────────────
+    User Question: "Welche Fahrzeuge?"
+
+              │
+              ↓
+    Generate Query Embedding
+    (OpenAI API)
+    │
+    ↓
+    [0.15, 0.22, -0.08, ...] ← 1536 dims
+
+              │
+              ↓
+    Chroma DB Similarity Search
+    ├─ Cosine Distance to Doc 1: 0.92 ← Best match
+    ├─ Cosine Distance to Doc 4: 0.45
+    ├─ Cosine Distance to Doc 2: 0.38
+    └─ Cosine Distance to Doc 3: 0.25
+
+              │
+              ↓
+    Top 5 Results (with metadata)
+    │
+    ↓
+    Context Prompt Building
+    │
+    ↓
+    OpenAI LLM Generation
+    │
+    ↓
+    "Royal E-Cars bietet Tesla Model S, BMW i7, Audi e-tron..."
+
+
+4. INTEGRATION ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+    EXTERNAL SERVICES
+    ──────────────────────────────────────────────────────
+
+    ┌──────────────┐
+    │  WhatsApp    │
+    │              │
+    │  User sends  │
+    │  message     │
+    └──────┬───────┘
+           │
+    ┌──────┴──────────────────────┐
+    │                             │
+    │  Twilio API                 │
+    │  ├─ Account SID             │
+    │  ├─ Auth Token              │
+    │  ├─ WhatsApp Webhook        │
+    │  └─ Message Sender          │
+    │                             │
+    └────┬───────────────┬────────┘
+         │               │
+         ↓               ↑
+    ┌─────────────────────────────┐
+    │    Our Backend              │
+    │  FastAPI Server             │
+    │  Port 8000                  │
+    │                             │
+    │  Receives ← Webhook Calls   │
+    │  Sends Responses →          │
+    │                             │
+    └──────────┬──────────────────┘
+               │
+         ┌─────┴──────────┬──────────┐
+         │                │          │
+         ↓                ↓          ↓
+    ┌──────────┐   ┌──────────┐  ┌──────────┐
+    │ OpenAI   │   │ Chroma   │  │ Twilio   │
+    │ API      │   │ DB       │  │ (send)   │
+    │          │   │          │  │          │
+    │ ├─ GPT   │   │ Vector   │  │ WhatsApp │
+    │ ├─ Embed │   │ Storage  │  │ Messages │
+    │ └─ Chat  │   │ Local    │  │          │
+    │          │   │          │  │          │
+    └──────────┘   └──────────┘  └──────────┘
+
+
+5. RESPONSE FLOW WITH CONTEXT-AWARENESS
+═══════════════════════════════════════════════════════════════════════════════
+
+    User: "Wie viel kostet eine Tour?"
+    
+         │
+         ↓
+    
+    Retrieve similar documents
+    ├─ Topic: "Pricing" → doc_2 (booking info)
+    ├─ Relevance: 0.92 (high)
+    │
+    └─ Extract context:
+       "Klassische Wien Tour (2h): €150"
+       "Gourmet Tour: €280"
+
+         │
+         ↓
+    
+    Generate context prompt:
+    
+    ┌─────────────────────────────────────────┐
+    │ System: Du bist ein Kundenservice...    │
+    │                                         │
+    │ Context:                                │
+    │ "Royal E-Cars bietet verschiedene       │
+    │  Tours an: Klassische Wien Tour         │
+    │  (2h) €150, Gourmet Tour €280..."      │
+    │                                         │
+    │ Question: "Wie viel kostet eine Tour?" │
+    │                                         │
+    │ Answer (auf Deutsch):                   │
+    └─────────────────────────────────────────┘
+
+         │
+         ↓
+    
+    OpenAI GPT-3.5-turbo generates:
+    
+    "Royal E-Cars bietet verschiedene Tours an.
+     Die klassische Wien-Tour dauert 2 Stunden
+     und kostet €150 pro Person. Unsere
+     Gourmet-Tour mit Restaurantbesuchen
+     kostet €280 pro Person. Für weitere
+     Informationen kontaktieren Sie uns..."
+
+         │
+         ↓
+    
+    User: "€150 klingt gut!"
+    
+         │
+         ↓
+    
+    Detect keyword "kostet" / "buchen" context
+    
+    Send additional message:
+    "🔗 Buchen Sie jetzt: royal-ecars.com/book-online"
+
+
+6. ERROR HANDLING FLOW
+═══════════════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────┐
+    │ Incoming Message│
+    └────────┬────────┘
+             │
+             ↓
+    Try to process
+    │
+    ├─ Error: OpenAI API key missing?
+    │  └─ Fallback: "Entschuldigung, Systemmehler"
+    │
+    ├─ Error: Vector DB not initialized?
+    │  └─ Fallback: "Datenbank nicht erreichbar"
+    │
+    ├─ Error: Twilio credentials invalid?
+    │  └─ Fallback: "Nachricht konnte nicht gesendet werden"
+    │
+    ├─ Error: Embedding generation failed?
+    │  └─ Fallback: Dummy embedding or skip retrieval
+    │
+    ├─ Error: LLM generation timeout?
+    │  └─ Fallback: Return error message
+    │
+    └─ Success: Send full response
+       └─ Log to console
+
+
+═══════════════════════════════════════════════════════════════════════════════
+Document: SYSTEM_ARCHITECTURE_DIAGRAMS.txt
+Version: 1.0
+Date: 2024-01-21
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 IMPLEMENTATION PRIORITY
+Week 1:
+
+Caching (Redis) - Biggest performance gain
+Analytics - Monitor usage
+Feedback loop - Improve quality
+Week 2:
+4. Document versioning
+5. Advanced search
+6. Multi-language
+
+Week 3:
+7. Dashboard
+8. A/B testing
+9. Hybrid search
+10. Context memory

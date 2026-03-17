@@ -1,4 +1,4 @@
-ROYAL E-CARS CHATBOT - SYSTEM ARCHITECTURE DIAGRAMS
+SYSTEM ARCHITECTURE DIAGRAMS
 ═══════════════════════════════════════════════════════════════════════════════
 
 

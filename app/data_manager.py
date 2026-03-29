@@ -4,6 +4,7 @@ from fastapi import APIRouter, File, UploadFile, Form
 from modules.rag.vector_store import VectorStore
 from modules.data_ingestion.web_scraper import WebScraper
 from modules.data_ingestion.embeddings import EmbeddingGenerator
+from database.seed_database import SAMPLE_DOCUMENTS
 from app.core.config import Settings
 from typing import List
 import asyncio
@@ -100,6 +101,35 @@ def get_stats():
         "total_documents": info.get("document_count", 0),
         "status": "ok"
     }
+
+
+@router.post("/seed-sample")
+def seed_sample_data(force: bool = False):
+    """Seed sample documents into the vector store."""
+    try:
+        info_before = vs.get_collection_info()
+        count_before = info_before.get("document_count", 0)
+
+        if count_before > 0 and not force:
+            return {
+                "status": "skipped",
+                "message": "Collection is not empty. Use force=true to seed anyway.",
+                "documents_before": count_before
+            }
+
+        if force:
+            vs.delete_all()
+
+        vs.add_documents(SAMPLE_DOCUMENTS)
+        info_after = vs.get_collection_info()
+
+        return {
+            "status": "success",
+            "documents_before": count_before,
+            "documents_after": info_after.get("document_count", 0)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @router.delete("/document/{doc_id}")
 def delete_document(doc_id: str):

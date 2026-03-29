@@ -1,6 +1,7 @@
 """ChromaDB initialization & vector store management"""
 
 import chromadb
+from chromadb.config import Settings as ChromaClientSettings
 from modules.data_ingestion.embeddings import EmbeddingGenerator
 from app.core.config import Settings
 from typing import List, Dict
@@ -20,7 +21,8 @@ class VectorStore:
         # Initialize Chroma client - use newer API
         try:
             self.client = chromadb.PersistentClient(
-                path=settings.chroma_persist_dir
+                path=settings.chroma_persist_dir,
+                settings=ChromaClientSettings(anonymized_telemetry=False)
             )
         except Exception as e:
             print(f"Chroma initialization error: {e}")

@@ -1,0 +1,48 @@
+{
+	"/(app)": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/": [
+		"src/routes/+page.ts"
+	],
+	"/api/ai/ask": [
+		"src/routes/api/ai/ask/+server.ts"
+	],
+	"/api/assignments": [
+		"src/routes/api/assignments/+server.ts"
+	],
+	"/api/auth/login": [
+		"src/routes/api/auth/login/+server.ts"
+	],
+	"/api/bookings": [
+		"src/routes/api/bookings/+server.ts"
+	],
+	"/api/cars": [
+		"src/routes/api/cars/+server.ts"
+	],
+	"/api/drivers": [
+		"src/routes/api/drivers/+server.ts"
+	],
+	"/api/reports": [
+		"src/routes/api/reports/+server.ts"
+	],
+	"/(app)/bookings": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/(app)/calendar": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/(app)/cars": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/(app)/dashboard": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/(app)/drivers": [
+		"src/routes/(app)/+layout.server.ts"
+	],
+	"/login": [],
+	"/(app)/reports": [
+		"src/routes/(app)/+layout.server.ts"
+	]
+}

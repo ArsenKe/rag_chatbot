@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Royal E-Cars – Assistent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #1a73e8;
+      --brand-dark: #1557b0;
+      --brand-light: #e8f0fd;
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --text: #1c1e21;
+      --muted: #65676b;
+      --border: #dde1e7;
+      --user-bubble: #1a73e8;
+      --bot-bubble: #ffffff;
+      --radius: 18px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+    .avatar {
+      width: 42px; height: 42px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    header .info h1 { font-size: 17px; font-weight: 700; }
+    header .info p  { font-size: 12px; opacity: .85; margin-top: 2px; }
+    header .admin-link {
+      margin-left: auto;
+      color: rgba(255,255,255,.8);
+      font-size: 12px;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      transition: background .15s;
+    }
+    header .admin-link:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+    /* ── Messages area ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 780px;
+      width: 100%;
+    }
+    .bubble-row.user  { align-self: flex-end;  flex-direction: row-reverse; }
+    .bubble-row.bot   { align-self: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.55;
+      max-width: min(72%, 560px);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .bubble-row.user .bubble {
+      background: var(--user-bubble);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-row.bot .bubble {
+      background: var(--bot-bubble);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+
+    .bot-avatar {
+      width: 32px; height: 32px;
+      background: var(--brand-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    /* ── Typing indicator ── */
+    .typing .bubble {
+      display: flex; align-items: center; gap: 5px;
+      padding: 12px 16px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0);   opacity: .4; }
+      40%            { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ── Suggestions ── */
+    #suggestions {
+      padding: 0 16px 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .chip {
+      background: var(--brand-light);
+      color: var(--brand);
+      border: 1px solid #c5d9f8;
+      border-radius: 20px;
+      padding: 6px 13px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    /* ── Input bar ── */
+    form#chat-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #user-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 10px 18px;
+      font-size: 14.5px;
+      outline: none;
+      transition: border-color .15s;
+      resize: none;
+      max-height: 120px;
+      overflow-y: auto;
+      font-family: inherit;
+    }
+    #user-input:focus { border-color: var(--brand); }
+    #send-btn {
+      width: 44px; height: 44px;
+      background: var(--brand);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    #send-btn:hover { background: var(--brand-dark); }
+    #send-btn:active { transform: scale(.93); }
+    #send-btn svg { fill: #fff; width: 20px; height: 20px; }
+    #send-btn:disabled { background: #b0c4e8; cursor: default; }
+
+    /* ── Welcome state ── */
+    #welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex: 1;
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+    }
+    #welcome .icon { font-size: 52px; }
+    #welcome h2 { font-size: 20px; color: var(--text); }
+    #welcome p  { font-size: 14px; max-width: 340px; line-height: 1.5; }
+
+    /* scrollbar */
+    #messages::-webkit-scrollbar { width: 5px; }
+    #messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="avatar">⚡</div>
+  <div class="info">
+    <h1>Royal E-Cars Assistent</h1>
+    <p>Fragen Sie uns zu Fahrzeugen, Buchungen &amp; mehr</p>
+  </div>
+  <a class="admin-link" href="/static/admin.html">Admin</a>
+</header>
+
+<div id="messages">
+  <div id="welcome">
+    <div class="icon">⚡</div>
+    <h2>Willkommen bei Royal E-Cars</h2>
+    <p>Stellen Sie mir eine Frage zu unserem Fuhrpark, Buchungen, Preisen oder Premium-Services.</p>
+  </div>
+</div>
+
+<div id="suggestions">
+  <span class="chip" onclick="askChip(this)">Welche Fahrzeuge gibt es?</span>
+  <span class="chip" onclick="askChip(this)">Wie kann ich buchen?</span>
+  <span class="chip" onclick="askChip(this)">Was kosten die Fahrzeuge?</span>
+  <span class="chip" onclick="askChip(this)">Premium-Service</span>
+  <span class="chip" onclick="askChip(this)">Häufige Fragen</span>
+</div>
+
+<form id="chat-form">
+  <textarea id="user-input" rows="1" placeholder="Ihre Frage..." autocomplete="off"></textarea>
+  <button type="submit" id="send-btn" aria-label="Senden">
+    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+  </button>
+</form>
+
+<script>
+  const form      = document.getElementById('chat-form');
+  const input     = document.getElementById('user-input');
+  const messages  = document.getElementById('messages');
+  const welcome   = document.getElementById('welcome');
+  const sendBtn   = document.getElementById('send-btn');
+  const suggestEl = document.getElementById('suggestions');
+
+  let busy = false;
+
+  // Auto-grow textarea
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+  // Send on Enter (Shift+Enter = newline)
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitChat(); }
+  });
+  form.addEventListener('submit', e => { e.preventDefault(); submitChat(); });
+
+  function askChip(el) {
+    if (busy) return;
+    input.value = el.textContent;
+    submitChat();
+  }
+
+  function hideWelcome() {
+    if (welcome) { welcome.remove(); }
+    suggestEl.style.display = 'none';
+  }
+
+  function appendBubble(role, text) {
+    const row = document.createElement('div');
+    row.className = `bubble-row ${role}`;
+
+    if (role === 'bot') {
+      const av = document.createElement('div');
+      av.className = 'bot-avatar';
+      av.textContent = '⚡';
+      row.appendChild(av);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+    return row;
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'bubble-row bot typing';
+    row.id = 'typing-indicator';
+
+    const av = document.createElement('div');
+    av.className = 'bot-avatar';
+    av.textContent = '⚡';
+    row.appendChild(av);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+    row.appendChild(bubble);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTyping() {
+    const t = document.getElementById('typing-indicator');
+    if (t) t.remove();
+  }
+
+  async function submitChat() {
+    const q = input.value.trim();
+    if (!q || busy) return;
+
+    hideWelcome();
+    busy = true;
+    sendBtn.disabled = true;
+
+    appendBubble('user', q);
+    input.value = '';
+    input.style.height = 'auto';
+    showTyping();
+
+    try {
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: q })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      hideTyping();
+      appendBubble('bot', data.answer || 'Keine Antwort erhalten.');
+    } catch (err) {
+      hideTyping();
+      appendBubble('bot', '⚠️ Verbindungsfehler. Bitte versuchen Sie es erneut.');
+      console.error(err);
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+</script>
+</body>
+</html>

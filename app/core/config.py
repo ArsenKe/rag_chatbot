@@ -19,11 +19,17 @@ class Settings(BaseSettings):
     environment: str = os.getenv("ENVIRONMENT", "development")
     chroma_persist_dir: str = os.getenv("CHROMA_PERSIST_DIR", "./database/chroma_db")
     whatsapp_webhook_secret: str = os.getenv("WHATSAPP_WEBHOOK_SECRET", "")
+    cors_allowed_origins_raw: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
     
     # RAG Configuration
     top_k_retrieval: int = int(os.getenv("TOP_K_RETRIEVAL", "5"))
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "50"))
+    auto_seed_sample_data: bool = os.getenv("AUTO_SEED_SAMPLE_DATA", "true").lower() in ("1", "true", "yes", "on")
+
+    @property
+    def cors_allowed_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins_raw.split(",") if origin.strip()]
     
     class Config:
         env_file = ".env"

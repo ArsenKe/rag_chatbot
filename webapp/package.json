@@ -1,0 +1,37 @@
+{
+  "name": "royal-ecars-webapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "node build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint .",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@sveltejs/adapter-node": "^5.2.8",
+    "@sveltejs/kit": "^2.11.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "prisma": "^5.20.0",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "jose": "^5.9.3",
+    "zod": "^3.23.8"
+  }
+}

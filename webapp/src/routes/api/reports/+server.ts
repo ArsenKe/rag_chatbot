@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
   if (reportType === 'revenue_daily') {
     const data = await prisma.$queryRawUnsafe(`
-      SELECT d.full_date::date AS day, SUM(f.total_amount) AS revenue
+      SELECT d."fullDate"::date AS day, SUM(f."totalAmount") AS revenue
       FROM "FactTrip" f
       JOIN "DimDate" d ON f."dateId" = d."dateId"
       GROUP BY d.full_date

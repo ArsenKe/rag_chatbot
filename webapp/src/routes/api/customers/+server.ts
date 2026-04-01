@@ -1,19 +1,18 @@
 import type { RequestHandler } from './$types';
 import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
-import { driverSchema } from '$lib/server/api/schemas';
+import { customerSchema } from '$lib/server/api/schemas';
 import { success, toErrorResponse } from '$lib/server/api/responses';
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+export const GET: RequestHandler = async ({ locals }) => {
   try {
     requireRole(locals.user?.role, ['admin', 'manager']);
 
-    const status = url.searchParams.get('status');
-    const drivers = await prisma.driver.findMany({
-      where: status ? { status: status as 'active' | 'inactive' } : undefined,
+    const customers = await prisma.customer.findMany({
       orderBy: { id: 'desc' }
     });
-    return success(drivers);
+
+    return success(customers);
   } catch (cause) {
     return toErrorResponse(cause);
   }
@@ -23,14 +22,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   try {
     requireRole(locals.user?.role, ['admin', 'manager']);
 
-    const body = driverSchema.parse(await request.json());
-    const created = await prisma.driver.create({
+    const body = customerSchema.parse(await request.json());
+    const created = await prisma.customer.create({
       data: {
         name: body.name,
-        licenseNumber: body.licenseNumber,
+        email: body.email || null,
         phone: body.phone || null,
-        hireDate: body.hireDate ? new Date(body.hireDate) : null,
-        status: body.status
+        address: body.address || null,
+        driverLicense: body.driverLicense || null,
+        registrationDate: body.registrationDate ? new Date(body.registrationDate) : null
       }
     });
 

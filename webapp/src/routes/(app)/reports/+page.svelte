@@ -3,11 +3,20 @@
 
   let rows: Array<Record<string, unknown>> = [];
   let type = 'revenue_daily';
+  let errorMsg = '';
 
   async function runReport() {
     const res = await fetch(`/api/reports?type=${type}`);
-    const data = await res.json();
-    rows = data.data ?? [];
+    const payload = await res.json();
+
+    if (!res.ok) {
+      errorMsg = payload.error?.message ?? 'Failed to run report';
+      rows = [];
+      return;
+    }
+
+    errorMsg = '';
+    rows = payload.data?.rows ?? [];
   }
 
   runReport();
@@ -24,5 +33,9 @@
   </select>
   <button class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-lg" on:click={runReport}>Run</button>
 </div>
+
+{#if errorMsg}
+  <p class="mb-4 text-sm text-red-600">{errorMsg}</p>
+{/if}
 
 <DataTable title="Report Result" {rows} />

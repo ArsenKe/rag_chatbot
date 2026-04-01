@@ -1,36 +1,45 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
+import { carSchema } from '$lib/server/api/schemas';
+import { success, toErrorResponse } from '$lib/server/api/responses';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
-  requireRole(locals.user?.role, ['admin', 'manager']);
+  try {
+    requireRole(locals.user?.role, ['admin', 'manager']);
 
-  const status = url.searchParams.get('status');
-  const cars = await prisma.car.findMany({
-    where: status ? { status: status as 'available' | 'rented' | 'maintenance' } : undefined,
-    orderBy: { id: 'desc' }
-  });
-  return json({ data: cars });
+    const status = url.searchParams.get('status');
+    const cars = await prisma.car.findMany({
+      where: status ? { status: status as 'available' | 'rented' | 'maintenance' } : undefined,
+      orderBy: { id: 'desc' }
+    });
+    return success(cars);
+  } catch (cause) {
+    return toErrorResponse(cause);
+  }
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  requireRole(locals.user?.role, ['admin', 'manager']);
+  try {
+    requireRole(locals.user?.role, ['admin', 'manager']);
 
-  const body = await request.json();
-  const created = await prisma.car.create({
-    data: {
-      licensePlate: body.licensePlate,
-      model: body.model,
-      make: body.make,
-      year: body.year,
-      seats: body.seats,
-      transmission: body.transmission,
-      fuelType: body.fuelType,
-      carClass: body.carClass,
-      status: body.status ?? 'available'
-    }
-  });
+    const body = carSchema.parse(await request.json());
+    const created = await prisma.car.create({
+      data: {
+        licensePlate: body.licensePlate,
+        model: body.model,
+        make: body.make,
+        year: body.year,
+        seats: body.seats,
+        transmission: body.transmission || null,
+        fuelType: body.fuelType || null,
+        carClass: body.carClass || null,
+        status: body.status
+      }
+    });
 
-  return json({ data: created }, { status: 201 });
+    return success(created, { status: 201 });
+  } catch (cause) {
+    return toErrorResponse(cause);
+  }
 };

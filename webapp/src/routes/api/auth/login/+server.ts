@@ -3,6 +3,7 @@ import { prisma } from '$lib/server/db/client';
 import { loginSchema } from '$lib/server/api/schemas';
 import { success, failure, toErrorResponse } from '$lib/server/api/responses';
 import { getSupabaseUserFromAccessToken } from '$lib/server/auth/supabase';
+import { signAuthToken } from '$lib/server/auth/jwt';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
   try {
@@ -37,6 +38,20 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60
+    });
+
+    const appToken = await signAuthToken({
+      sub: user.id,
+      role: user.role,
+      email: user.email
+    });
+
+    cookies.set('token', appToken, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 12
     });
 
     return success({ ok: true, user: { id: user.id, email: user.email, role: user.role } });

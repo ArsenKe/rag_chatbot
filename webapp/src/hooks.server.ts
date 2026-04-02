@@ -6,9 +6,9 @@ import { getSupabaseUserFromAccessToken } from '$lib/server/auth/supabase';
 export const handle: Handle = async ({ event, resolve }) => {
   event.locals.user = null;
 
-  const authProvider = process.env.AUTH_PROVIDER ?? 'supabase';
+  const authProvider = (process.env.AUTH_PROVIDER ?? 'supabase').trim().toLowerCase();
 
-  if (authProvider === 'supabase') {
+  if (authProvider !== 'jwt') {
     const token = event.cookies.get('sb-access-token');
 
     if (token) {
@@ -27,6 +27,28 @@ export const handle: Handle = async ({ event, resolve }) => {
             role: user.role,
             email: user.email
           };
+        }
+      }
+    }
+
+    if (!event.locals.user) {
+      const fallbackToken = event.cookies.get('token');
+
+      if (fallbackToken) {
+        const payload = await verifyAuthToken(fallbackToken);
+        if (payload) {
+          const user = await prisma.user.findUnique({
+            where: { id: payload.sub },
+            select: { id: true, email: true, role: true }
+          });
+
+          if (user) {
+            event.locals.user = {
+              id: user.id,
+              role: user.role,
+              email: user.email
+            };
+          }
         }
       }
     }

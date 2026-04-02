@@ -4,7 +4,7 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (!locals.user) {
     const next = encodeURIComponent(url.pathname);
-    redirect(307, `/login?next=${next}`);
+    throw redirect(307, `/login?next=${next}`);
   }
 
   return {

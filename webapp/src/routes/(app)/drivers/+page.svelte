@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import DataTable from '$lib/components/tables/DataTable.svelte';
+  import { supabase } from '$lib/supabase/client';
 
   let rows: Array<Record<string, unknown>> = [];
   let loading = true;
   let saving = false;
   let errorMsg = '';
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   let form = {
     name: '',
@@ -54,7 +57,37 @@
     await loadDrivers();
   }
 
-  loadDrivers();
+  function queueRefresh() {
+    if (refreshTimer) {
+      return;
+    }
+
+    refreshTimer = setTimeout(async () => {
+      refreshTimer = null;
+      await loadDrivers();
+    }, 250);
+  }
+
+  onMount(() => {
+    void loadDrivers();
+
+    const channel = supabase
+      .channel('drivers-live')
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        const table = String((payload as { table?: string }).table ?? '').toLowerCase();
+        if (table === 'driver' || table === 'driveravailability' || table === 'trip') {
+          void queueRefresh();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      void supabase.removeChannel(channel);
+    };
+  });
 </script>
 
 <div class="grid gap-6 lg:grid-cols-[360px,minmax(0,1fr)]">

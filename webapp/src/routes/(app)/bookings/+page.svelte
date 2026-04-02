@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import DataTable from '$lib/components/tables/DataTable.svelte';
+  import { supabase } from '$lib/supabase/client';
 
   let rows: Array<Record<string, unknown>> = [];
   let customers: Array<{ id: string; name: string }> = [];
@@ -7,6 +9,7 @@
   let loading = true;
   let saving = false;
   let errorMsg = '';
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   let form = {
     customerId: '',
@@ -102,7 +105,37 @@
     await loadBookings();
   }
 
-  loadBookings();
+  function queueRefresh() {
+    if (refreshTimer) {
+      return;
+    }
+
+    refreshTimer = setTimeout(async () => {
+      refreshTimer = null;
+      await loadBookings();
+    }, 250);
+  }
+
+  onMount(() => {
+    void loadBookings();
+
+    const channel = supabase
+      .channel('bookings-live')
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        const table = String((payload as { table?: string }).table ?? '').toLowerCase();
+        if (table === 'booking' || table === 'trip' || table === 'driver') {
+          void queueRefresh();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      void supabase.removeChannel(channel);
+    };
+  });
 </script>
 
 <div class="grid gap-6 lg:grid-cols-[420px,minmax(0,1fr)]">

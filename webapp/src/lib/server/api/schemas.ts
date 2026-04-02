@@ -50,3 +50,10 @@ export const bookingSchema = z
     message: 'requestedEnd must be after requestedStart',
     path: ['requestedEnd']
   });
+
+export const assignmentSchema = z.object({
+  bookingId: z.coerce.bigint(),
+  driverId: z.coerce.bigint().optional(),
+  carId: z.coerce.bigint().optional(),
+  override: z.boolean().optional().default(false)
+});

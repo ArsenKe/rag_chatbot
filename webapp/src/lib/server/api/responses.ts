@@ -11,7 +11,7 @@ type ErrorBody = {
 };
 
 export function success<T>(data: T, init?: ResponseInit) {
-  return json({ data }, init);
+  return json({ data: toJsonSafe(data) }, init);
 }
 
 export function failure(status: number, code: string, message: string, details?: unknown) {
@@ -20,7 +20,7 @@ export function failure(status: number, code: string, message: string, details?:
       error: {
         code,
         message,
-        ...(details === undefined ? {} : { details })
+        ...(details === undefined ? {} : { details: toJsonSafe(details) })
       }
     } satisfies ErrorBody,
     { status }
@@ -70,4 +70,27 @@ function isHttpErrorLike(value: unknown): value is {
 
 function isZodError(value: unknown): value is ZodError {
   return Boolean(value && typeof value === 'object' && 'name' in value && (value as { name?: string }).name === 'ZodError');
+}
+
+function toJsonSafe<T>(value: T): T {
+  if (typeof value === 'bigint') {
+    return value.toString() as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => toJsonSafe(item)) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const input = value as Record<string, unknown>;
+    const output: Record<string, unknown> = {};
+
+    for (const [key, item] of Object.entries(input)) {
+      output[key] = toJsonSafe(item);
+    }
+
+    return output as T;
+  }
+
+  return value;
 }

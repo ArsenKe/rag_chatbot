@@ -19,6 +19,7 @@
         <a class="hover:text-brand" href="/drivers">Drivers</a>
         <a class="hover:text-brand" href="/cars">Cars</a>
         <a class="hover:text-brand" href="/customers">Customers</a>
+        <a class="hover:text-brand" href="/locations">Locations</a>
         <a class="hover:text-brand" href="/bookings">Bookings</a>
         <a class="hover:text-brand" href="/calendar">Calendar</a>
         <a class="hover:text-brand" href="/reports">Reports</a>

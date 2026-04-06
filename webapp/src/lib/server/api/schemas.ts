@@ -58,6 +58,14 @@ export const assignmentSchema = z.object({
   override: z.boolean().optional().default(false)
 });
 
+export const locationSchema = z.object({
+  name: z.string().trim().min(2),
+  address: z.string().trim().optional().or(z.literal('')),
+  city: z.string().trim().optional().or(z.literal('')),
+  postalCode: z.string().trim().optional().or(z.literal('')),
+  type: z.enum(['pickup', 'dropoff', 'both'])
+});
+
 export const publicBookingSchema = z.object({
   name: z.string().trim().min(2),
   phone: z.string().trim().min(6),

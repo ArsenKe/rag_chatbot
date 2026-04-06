@@ -57,3 +57,13 @@ export const assignmentSchema = z.object({
   carId: z.coerce.bigint().optional(),
   override: z.boolean().optional().default(false)
 });
+
+export const publicBookingSchema = z.object({
+  name: z.string().trim().min(2),
+  phone: z.string().trim().min(6),
+  pickupLocationId: z.coerce.bigint(),
+  dropoffLocationId: z.coerce.bigint(),
+  requestedStart: z.string().datetime(),
+  carClass: z.string().trim().optional().or(z.literal('')),
+  notes: z.string().trim().optional().or(z.literal(''))
+});

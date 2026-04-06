@@ -55,8 +55,8 @@ def health():
 
 @app.post("/ask")
 def ask(question: Question):
-    answer = rag.answer_question(question.text)
-    return {"question": question.text, "answer": answer}
+    result = rag.answer_with_sources(question.text)
+    return {"question": question.text, **result}
 
 @app.get("/")
 def root():

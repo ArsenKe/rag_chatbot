@@ -53,6 +53,64 @@ Beantworte: {question}"""
         except Exception as e:
             return f"Fehler: {str(e)}"
 
+    def answer_with_sources(self, question: str) -> Dict:
+        """Answer question using RAG and return answer with source citations."""
+        category_labels = {
+            "fleet_info": "Fleet Information",
+            "booking_info": "Booking Options",
+            "premium_services": "Premium Services",
+            "policies": "Policies & Terms",
+            "faqs": "FAQs",
+        }
+        try:
+            docs = self.vector_store.search(question, k=5)
+
+            if not docs:
+                return {
+                    "answer": "I couldn't find an answer in our knowledge base. Please contact support.",
+                    "sources": []
+                }
+
+            seen: set = set()
+            sources: List[Dict] = []
+            for doc in docs:
+                meta = doc.get("metadata", {})
+                raw_url = meta.get("source", "")
+                category = meta.get("category", "")
+                title = category_labels.get(
+                    category,
+                    category.replace("_", " ").title() if category else "Knowledge Base"
+                )
+                url = raw_url if raw_url.startswith("http") else None
+                key = url or title
+                if key not in seen:
+                    seen.add(key)
+                    sources.append({"title": title, "url": url})
+
+            context = "\n\n".join([
+                f"• {self._normalize_text(doc.get('content', ''))[:300]}..." for doc in docs
+            ])
+            system_prompt = "Du bist ein hilfreicher Kundenservice-Chatbot für Royal E-Cars."
+            user_prompt = f"Basierend auf diesen Informationen:\n\n{context}\n\nBeantworte: {question}"
+
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=300
+                )
+                answer = self._normalize_text(response.choices[0].message.content)
+            except Exception:
+                answer = self._fallback_answer(question, docs)
+
+            return {"answer": answer, "sources": sources}
+        except Exception as e:
+            return {"answer": f"Error: {str(e)}", "sources": []}
+
     def _fallback_answer(self, question: str, docs: List[Dict]) -> str:
         """Return a deterministic context-only answer when OpenAI is unavailable."""
         snippets = []

@@ -18,11 +18,13 @@ This folder contains the fullstack app scaffold requested:
 - `src/routes/(app)/bookings`
 - `src/routes/(app)/calendar`
 - `src/routes/(app)/reports`
+- `src/routes/(app)/knowledge`
 - `src/routes/api/drivers`
 - `src/routes/api/cars`
 - `src/routes/api/bookings`
 - `src/routes/api/assignments`
 - `src/routes/api/reports`
+- `src/routes/api/knowledge/*`
 - `src/routes/api/ai/ask`
 - `src/lib/server/db`
 - `src/lib/server/auth`
@@ -173,6 +175,14 @@ Assignment endpoint enforces overlap rejection with this condition:
 
 Dashboard uses `/api/ai/ask` which proxies to `${SVELTEKIT_API_BASE_URL}/ask`.
 Keep your existing FastAPI service running as the AI API.
+
+Admin knowledge management uses SvelteKit proxy routes:
+
+- `GET /api/knowledge/stats` -> `${SVELTEKIT_API_BASE_URL}/data/stats`
+- `POST /api/knowledge/upload` -> `${SVELTEKIT_API_BASE_URL}/data/upload-file`
+- `POST /api/knowledge/seed` -> `${SVELTEKIT_API_BASE_URL}/data/seed-sample`
+
+The UI is available at `/knowledge` for `admin` role only.
 
 ## Suggested Delivery Phases
 

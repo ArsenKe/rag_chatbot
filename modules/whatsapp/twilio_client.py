@@ -10,14 +10,18 @@ class TwilioWhatsAppClient:
     
     def __init__(self):
         """Initialize Twilio client with credentials from settings"""
-        if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
+        account_sid = getattr(settings, 'twilio_account_sid', None) or getattr(settings, 'TWILIO_ACCOUNT_SID', '')
+        auth_token = getattr(settings, 'twilio_auth_token', None) or getattr(settings, 'TWILIO_AUTH_TOKEN', '')
+        whatsapp_number = getattr(settings, 'twilio_whatsapp_number', None) or getattr(settings, 'TWILIO_WHATSAPP_NUMBER', '')
+
+        if not account_sid or not auth_token:
             raise ValueError("Twilio credentials not configured")
-        
+
         self.client = Client(
-            settings.TWILIO_ACCOUNT_SID,
-            settings.TWILIO_AUTH_TOKEN
+            account_sid,
+            auth_token
         )
-        self.whatsapp_number = settings.TWILIO_WHATSAPP_NUMBER
+        self.whatsapp_number = whatsapp_number
     
     def send_message(
         self,

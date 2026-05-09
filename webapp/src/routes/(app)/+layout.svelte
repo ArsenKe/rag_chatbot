@@ -18,6 +18,7 @@
         <a class="hover:text-brand" href="/dashboard">Dashboard</a>
         {#if data.user?.role === 'admin'}
           <a class="hover:text-brand" href="/users">Users</a>
+          <a class="hover:text-brand" href="/knowledge">Knowledge</a>
         {/if}
         <a class="hover:text-brand" href="/drivers">Drivers</a>
         <a class="hover:text-brand" href="/cars">Cars</a>

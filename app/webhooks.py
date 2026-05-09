@@ -23,14 +23,28 @@ async def whatsapp_webhook(request: Request):
     Called by Twilio when a customer sends a WhatsApp message.
     Routes the message through the RAG pipeline and sends response back.
     """
-    payload = await request.json()
-    
-    # Process the incoming message
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        payload = await request.json()
+    else:
+        form = await request.form()
+        payload = dict(form)
+
+    # Process the incoming message through RAG.
     result = handle_message(payload)
-    
+
+    sender = str(payload.get("From", "")).strip()
+    if sender.startswith("whatsapp:"):
+        sender = sender.split(":", 1)[1]
+
+    outbound = None
+    if sender:
+        outbound = send_message(sender, result)
+
     return {
         "status": "received",
-        "processing_result": result
+        "processing_result": result,
+        "outbound": outbound,
     }
 
 

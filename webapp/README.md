@@ -120,10 +120,12 @@ Use this mode in production if Supabase should manage identity while the app dat
 - `PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>`
 - `SUPABASE_URL=<your-supabase-project-url>`
 - `SUPABASE_ANON_KEY=<your-supabase-anon-key>`
+- `SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>`
 - `JWT_SECRET=<long-random-secret>`
 - `SVELTEKIT_API_BASE_URL=<public-fastapi-url>`
 - `DATABASE_URL=<postgres-url>`
 - `DIRECT_URL=<postgres-url>`
+- `AUTH_INVITE_REDIRECT_TO=<optional-app-url-for-invite-redirect>`
 
 ### Railway env for `fastapi-rag`
 
@@ -147,6 +149,13 @@ Use this mode in production if Supabase should manage identity while the app dat
 2. Sign in once or confirm the email address in Supabase.
 3. In the app, an admin opens `/users` and creates or updates the local role mapping for the same email.
 4. Route protection and API RBAC continue to use the app-local role from the database.
+
+### Invite automation (optional)
+
+- Admins can use `/users` and click `Invite + Create mapping`.
+- This sends Supabase invite email and upserts local app role mapping in one step.
+- API endpoint: `/api/users/invite` (admin only).
+- Requires `SUPABASE_SERVICE_ROLE_KEY` to be set in the SvelteKit service.
 
 ## Assignment Conflict Rule
 

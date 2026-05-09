@@ -16,6 +16,11 @@ export const appUserUpdateSchema = z.object({
   role: roleSchema
 });
 
+export const appUserInviteSchema = z.object({
+  email: z.string().trim().email().transform((value: string) => value.toLowerCase()),
+  role: roleSchema
+});
+
 export const driverSchema = z.object({
   name: z.string().trim().min(2),
   licenseNumber: z.string().trim().min(3),

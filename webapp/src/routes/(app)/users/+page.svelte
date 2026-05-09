@@ -14,6 +14,7 @@
   let users: AppUser[] = [];
   let loading = true;
   let saving = false;
+  let inviting = false;
   let deletingId: string | null = null;
   let editingId: string | null = null;
   let errorMsg = '';
@@ -64,6 +65,31 @@
 
     if (!res.ok) {
       errorMsg = payload.error?.message ?? 'Failed to save user';
+      return;
+    }
+
+    resetForm();
+    await loadUsers();
+  }
+
+  async function inviteAndSave() {
+    inviting = true;
+    errorMsg = '';
+
+    const res = await fetch('/api/users/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email.trim().toLowerCase(),
+        role: form.role
+      })
+    });
+
+    const payload = await res.json();
+    inviting = false;
+
+    if (!res.ok) {
+      errorMsg = payload.error?.message ?? 'Failed to send invite';
       return;
     }
 
@@ -143,6 +169,13 @@
         on:click={save}
         disabled={saving}
       >{saving ? 'Saving…' : editingId ? 'Update mapping' : 'Create mapping'}</button>
+      {#if !editingId}
+        <button
+          class="flex-1 bg-slate-900 hover:bg-black text-white rounded-lg py-2 font-semibold disabled:opacity-60"
+          on:click={inviteAndSave}
+          disabled={inviting}
+        >{inviting ? 'Inviting…' : 'Invite + Create mapping'}</button>
+      {/if}
       {#if editingId}
         <button class="px-4 rounded-lg border hover:bg-slate-50 text-sm" on:click={resetForm}>Cancel</button>
       {/if}

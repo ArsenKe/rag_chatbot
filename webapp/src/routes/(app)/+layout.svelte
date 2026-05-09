@@ -16,6 +16,9 @@
       </div>
       <nav class="flex gap-3 text-sm items-center flex-wrap justify-end">
         <a class="hover:text-brand" href="/dashboard">Dashboard</a>
+        {#if data.user?.role === 'admin'}
+          <a class="hover:text-brand" href="/users">Users</a>
+        {/if}
         <a class="hover:text-brand" href="/drivers">Drivers</a>
         <a class="hover:text-brand" href="/cars">Cars</a>
         <a class="hover:text-brand" href="/customers">Customers</a>

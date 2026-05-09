@@ -109,6 +109,45 @@ Example:
 - `AUTH_PROVIDER=supabase`
   - Use Supabase URL/key and replace login flow with Supabase session validation.
 
+## Supabase Auth Setup
+
+Use this mode in production if Supabase should manage identity while the app database stores only roles.
+
+### Railway env for `sveltekit-app`
+
+- `AUTH_PROVIDER=supabase`
+- `PUBLIC_SUPABASE_URL=<your-supabase-project-url>`
+- `PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>`
+- `SUPABASE_URL=<your-supabase-project-url>`
+- `SUPABASE_ANON_KEY=<your-supabase-anon-key>`
+- `JWT_SECRET=<long-random-secret>`
+- `SVELTEKIT_API_BASE_URL=<public-fastapi-url>`
+- `DATABASE_URL=<postgres-url>`
+- `DIRECT_URL=<postgres-url>`
+
+### Railway env for `fastapi-rag`
+
+- `CORS_ALLOWED_ORIGINS=<public-sveltekit-url>`
+
+### Role model
+
+- Supabase Auth stores identity, password reset, session lifecycle, and email verification.
+- The app `User` table stores only `email` and `role`.
+- Allowed app roles: `admin`, `manager`, `driver`.
+- The email in Supabase Auth must match the email in the app `User` record.
+
+### First admin bootstrap
+
+- The first successful Supabase login auto-creates a local `admin` user if the app `User` table is empty.
+- After that, admins can manage local user-role mappings from `/users`.
+
+### Ongoing user onboarding
+
+1. Create or invite the identity in Supabase Auth.
+2. Sign in once or confirm the email address in Supabase.
+3. In the app, an admin opens `/users` and creates or updates the local role mapping for the same email.
+4. Route protection and API RBAC continue to use the app-local role from the database.
+
 ## Assignment Conflict Rule
 
 Assignment endpoint enforces overlap rejection with this condition:

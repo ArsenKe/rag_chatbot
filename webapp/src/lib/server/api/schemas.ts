@@ -6,6 +6,16 @@ export const loginSchema = z.object({
   accessToken: z.string().trim().min(10)
 });
 
+export const appUserCreateSchema = z.object({
+  email: z.string().trim().email().transform((value: string) => value.toLowerCase()),
+  role: roleSchema
+});
+
+export const appUserUpdateSchema = z.object({
+  email: z.string().trim().email().transform((value: string) => value.toLowerCase()),
+  role: roleSchema
+});
+
 export const driverSchema = z.object({
   name: z.string().trim().min(2),
   licenseNumber: z.string().trim().min(3),
@@ -46,7 +56,7 @@ export const bookingSchema = z
     status: z.enum(['reserved', 'confirmed', 'completed', 'cancelled']).default('reserved'),
     notes: z.string().trim().optional().or(z.literal(''))
   })
-  .refine((value) => new Date(value.requestedEnd) > new Date(value.requestedStart), {
+  .refine((value: { requestedStart: string; requestedEnd: string }) => new Date(value.requestedEnd) > new Date(value.requestedStart), {
     message: 'requestedEnd must be after requestedStart',
     path: ['requestedEnd']
   });

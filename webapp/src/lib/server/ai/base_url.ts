@@ -8,3 +8,12 @@ export function getAIBaseUrl(): string {
 
   return base.endsWith('/') ? base.slice(0, -1) : base;
 }
+
+export function getRagAdminToken(): string {
+  const token = env.RAG_ADMIN_TOKEN?.trim();
+  if (!token) {
+    throw new Error('RAG_ADMIN_TOKEN is missing');
+  }
+
+  return token;
+}

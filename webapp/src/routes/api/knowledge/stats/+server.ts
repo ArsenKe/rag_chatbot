@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireRole } from '$lib/server/rbac/roles';
 import { toErrorResponse, success } from '$lib/server/api/responses';
-import { getAIBaseUrl } from '$lib/server/ai/base_url';
+import { getAIBaseUrl, getRagAdminToken } from '$lib/server/ai/base_url';
 
 export const GET: RequestHandler = async ({ locals, fetch }) => {
   try {
@@ -10,7 +10,10 @@ export const GET: RequestHandler = async ({ locals, fetch }) => {
 
     const response = await fetch(`${getAIBaseUrl()}/data/stats`, {
       method: 'GET',
-      headers: { Accept: 'application/json' }
+      headers: {
+        Accept: 'application/json',
+        'X-RAG-ADMIN-TOKEN': getRagAdminToken()
+      }
     });
 
     const payload = await response.json();

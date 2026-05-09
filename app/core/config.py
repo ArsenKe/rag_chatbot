@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = os.getenv("CHROMA_PERSIST_DIR", "./database/chroma_db")
     whatsapp_webhook_secret: str = os.getenv("WHATSAPP_WEBHOOK_SECRET", "")
     cors_allowed_origins_raw: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+    rag_admin_token: str = os.getenv("RAG_ADMIN_TOKEN", "")
+    rag_protect_stats: bool = os.getenv("RAG_PROTECT_STATS", "false").lower() in ("1", "true", "yes", "on")
     
     # RAG Configuration
     top_k_retrieval: int = int(os.getenv("TOP_K_RETRIEVAL", "5"))

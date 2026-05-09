@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireRole } from '$lib/server/rbac/roles';
 import { toErrorResponse, success } from '$lib/server/api/responses';
-import { getAIBaseUrl } from '$lib/server/ai/base_url';
+import { getAIBaseUrl, getRagAdminToken } from '$lib/server/ai/base_url';
 
 export const POST: RequestHandler = async ({ request, locals, fetch }) => {
   try {
@@ -20,6 +20,9 @@ export const POST: RequestHandler = async ({ request, locals, fetch }) => {
 
     const response = await fetch(`${getAIBaseUrl()}/data/scrape-gdrive`, {
       method: 'POST',
+      headers: {
+        'X-RAG-ADMIN-TOKEN': getRagAdminToken()
+      },
       body: forward
     });
 

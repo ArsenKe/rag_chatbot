@@ -125,6 +125,7 @@ Use this mode in production if Supabase should manage identity while the app dat
 - `SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>`
 - `JWT_SECRET=<long-random-secret>`
 - `SVELTEKIT_API_BASE_URL=<public-fastapi-url>`
+- `RAG_ADMIN_TOKEN=<shared-secret-used-for-rag-write-endpoints>`
 - `DATABASE_URL=<postgres-url>`
 - `DIRECT_URL=<postgres-url>`
 - `AUTH_INVITE_REDIRECT_TO=<optional-app-url-for-invite-redirect>`
@@ -132,6 +133,8 @@ Use this mode in production if Supabase should manage identity while the app dat
 ### Railway env for `fastapi-rag`
 
 - `CORS_ALLOWED_ORIGINS=<public-sveltekit-url>`
+- `RAG_ADMIN_TOKEN=<same-shared-secret-as-sveltekit-app>`
+- `RAG_PROTECT_STATS=true|false` (optional, default `false`)
 
 ### Role model
 
@@ -183,6 +186,13 @@ Admin knowledge management uses SvelteKit proxy routes:
 - `POST /api/knowledge/seed` -> `${SVELTEKIT_API_BASE_URL}/data/seed-sample`
 
 The UI is available at `/knowledge` for `admin` role only.
+
+Security hardening:
+
+- RAG write endpoints now require header `X-RAG-ADMIN-TOKEN`.
+- SvelteKit knowledge proxy routes attach this header server-side.
+- Browser clients never receive this secret.
+- If `RAG_PROTECT_STATS=true`, `/data/stats` also requires the same header.
 
 ## Suggested Delivery Phases
 

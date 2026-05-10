@@ -13,6 +13,24 @@ export const POST: RequestHandler = async ({ request, locals, fetch }) => {
       throw error(400, 'text is required');
     }
 
+    const normalizedHistory = Array.isArray(body?.history)
+      ? body.history
+          .filter((item: unknown) => {
+            if (!item || typeof item !== 'object') return false;
+            const rec = item as Record<string, unknown>;
+            return (
+              (rec.role === 'user' || rec.role === 'assistant') &&
+              typeof rec.text === 'string' &&
+              rec.text.trim().length > 0
+            );
+          })
+          .slice(-8)
+          .map((item: Record<string, unknown>) => ({
+            role: item.role as 'user' | 'assistant',
+            text: (item.text as string).trim()
+          }))
+      : [];
+
     const base = process.env.SVELTEKIT_API_BASE_URL ?? process.env.FASTAPI_BASE_URL;
     if (!base) {
       throw error(500, 'SVELTEKIT_API_BASE_URL is missing');
@@ -21,7 +39,7 @@ export const POST: RequestHandler = async ({ request, locals, fetch }) => {
     const response = await fetch(`${base}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: body.text.trim() })
+      body: JSON.stringify({ text: body.text.trim(), history: normalizedHistory })
     });
 
     const contentType = response.headers.get('content-type') ?? '';

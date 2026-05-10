@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List, Literal
 from modules.rag.qa_chain import RAGChain
 from modules.rag.vector_store import VectorStore
 from app.core.config import Settings
@@ -46,8 +47,14 @@ async def seed_on_startup():
 app.include_router(webhook_router)
 app.include_router(data_router)
 
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str
+
+
 class Question(BaseModel):
     text: str
+    history: List[ChatMessage] = Field(default_factory=list)
 
 @app.get("/health")
 def health():
@@ -55,7 +62,8 @@ def health():
 
 @app.post("/ask")
 def ask(question: Question):
-    result = rag.answer_with_sources(question.text)
+    history = [item.model_dump() for item in question.history if item.text.strip()]
+    result = rag.answer_with_sources(question.text, history=history)
     return {"question": question.text, **result}
 
 @app.get("/")

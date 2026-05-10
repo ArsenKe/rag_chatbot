@@ -48,22 +48,34 @@
     }, 50);
   }
 
+  function buildHistory() {
+    return messages
+      .filter((m) => !m.loading && !m.error && m.text.trim().length > 0)
+      .slice(-8)
+      .map((m) => ({ role: m.role, text: m.text.trim() }));
+  }
+
   async function sendMessage(text: string) {
     if (!text.trim()) return;
     const userMsg: Message = { id: nextId++, role: 'user', text: text.trim() };
+    const history = [...buildHistory(), { role: 'user' as const, text: text.trim() }];
     const loadingId = nextId++;
     messages = [...messages, userMsg, { id: loadingId, role: 'assistant', text: '', loading: true }];
     inputText = '';
     scrollToBottom();
-    await doRequest(text.trim(), loadingId);
+    await doRequest(text.trim(), loadingId, history);
   }
 
-  async function doRequest(text: string, targetId: number) {
+  async function doRequest(
+    text: string,
+    targetId: number,
+    history: Array<{ role: 'user' | 'assistant'; text: string }>
+  ) {
     try {
       const res = await fetch('/api/ai/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, history })
       });
       const payload = await res.json();
       if (!res.ok) {
@@ -94,7 +106,8 @@
     messages = messages.map((m) =>
       m.id === targetId ? { ...m, loading: true, error: false, text: '', failedText: undefined } : m
     );
-    await doRequest(failedText, targetId);
+    const history = buildHistory();
+    await doRequest(failedText, targetId, history);
   }
 
   function handleKeydown(e: KeyboardEvent) {

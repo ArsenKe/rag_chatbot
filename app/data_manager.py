@@ -145,6 +145,34 @@ def seed_sample_data(
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
+@router.post("/clear")
+def clear_all_data(
+    confirm: bool = False,
+    x_rag_admin_token: str | None = Header(default=None, alias="X-RAG-ADMIN-TOKEN")
+):
+    """Clear all indexed documents/chunks from the vector store."""
+    require_admin_token(x_rag_admin_token)
+
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Confirmation required. Set confirm=true")
+
+    try:
+        info_before = vs.get_collection_info()
+        count_before = info_before.get("document_count", 0)
+
+        vs.delete_all()
+
+        info_after = vs.get_collection_info()
+        return {
+            "status": "success",
+            "message": "Knowledge base cleared",
+            "documents_before": count_before,
+            "documents_after": info_after.get("document_count", 0)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @router.delete("/document/{doc_id}")
 def delete_document(
     doc_id: str,

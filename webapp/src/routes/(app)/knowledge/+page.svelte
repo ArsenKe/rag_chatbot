@@ -7,6 +7,7 @@
   let scrapingUrls = false;
   let importingGDrive = false;
   let seeding = false;
+  let clearing = false;
   let forceSeed = true;
   let selectedFile: File | null = null;
   let urlsText = '';
@@ -95,6 +96,33 @@
     await loadStats();
   }
 
+  async function clearKnowledge() {
+    const confirmed = window.confirm('Clear all indexed chunks? This cannot be undone.');
+    if (!confirmed) return;
+
+    clearing = true;
+    errorMsg = '';
+    statusMsg = '';
+
+    const res = await fetch('/api/knowledge/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm: true })
+    });
+
+    const payload = await res.json();
+    clearing = false;
+
+    if (!res.ok) {
+      errorMsg = payload.error?.message ?? 'Clear request failed';
+      return;
+    }
+
+    const before = payload.data?.documents_before;
+    statusMsg = `Knowledge base cleared${before !== undefined ? ` (removed ${before} chunks)` : ''}.`;
+    await loadStats();
+  }
+
   async function scrapeUrls() {
     const urls = urlsText
       .split(/\r?\n/)
@@ -179,6 +207,16 @@
         {:else}
           <p class="mt-2 text-2xl font-semibold">{totalDocuments ?? 0}</p>
         {/if}
+      </div>
+
+      <div class="rounded-lg border bg-rose-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-rose-700">Danger Zone</p>
+        <p class="mt-2 text-sm text-rose-800">Delete all indexed chunks from the RAG store.</p>
+        <button
+          class="mt-3 rounded-lg bg-rose-700 text-white px-3 py-2 text-sm font-semibold disabled:opacity-60"
+          on:click={clearKnowledge}
+          disabled={clearing || loadingStats}
+        >{clearing ? 'Clearing…' : 'Clear knowledge base'}</button>
       </div>
     </div>
 

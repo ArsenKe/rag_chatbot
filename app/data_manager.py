@@ -3,7 +3,6 @@
 from fastapi import APIRouter, File, UploadFile, Form, Header, HTTPException
 from modules.rag.vector_store import VectorStore
 from modules.data_ingestion.web_scraper import WebScraper
-from modules.data_ingestion.embeddings import EmbeddingGenerator
 from database.seed_database import SAMPLE_DOCUMENTS
 from app.core.config import Settings
 from typing import List
@@ -12,7 +11,6 @@ router = APIRouter(prefix="/data", tags=["data"])
 
 settings = Settings()
 vs = VectorStore(settings)
-embedder = EmbeddingGenerator(settings.openai_api_key)
 
 
 def require_admin_token(header_token: str | None, *, for_stats: bool = False):
@@ -38,17 +36,15 @@ async def upload_file(
     try:
         content = await file.read()
         text = content.decode('utf-8', errors='ignore')
-        
-        # Add to vector store
+
         doc_id = file.filename.replace('.', '_')
-        embedding = embedder.generate_embedding(text[:500])
-        
-        vs.collection.add(
-            ids=[doc_id],
-            embeddings=[embedding],
-            documents=[text],
-            metadatas=[{"source": f"Uploaded: {file.filename}"}]
-        )
+        vs.add_documents([
+            {
+                "id": doc_id,
+                "content": text,
+                "metadata": {"source": f"Uploaded: {file.filename}", "type": "upload"}
+            }
+        ])
         
         return {
             "status": "success",
@@ -69,16 +65,8 @@ async def scrape_urls(
     try:
         scraper = WebScraper()
         documents = scraper.scrape_urls(urls)
-        
-        # Add to vector store
-        for doc in documents:
-            embedding = embedder.generate_embedding(doc['content'][:500])
-            vs.collection.add(
-                ids=[doc['id']],
-                embeddings=[embedding],
-                documents=[doc['content']],
-                metadatas=[doc['metadata']]
-            )
+
+        vs.add_documents(documents)
         
         return {
             "status": "success",
@@ -101,16 +89,8 @@ async def scrape_gdrive(
         
         loader = GoogleDriveLoader(settings.gdrive_credentials_path)
         documents = loader.load_documents(folder_id)
-        
-        # Add to vector store
-        for doc in documents:
-            embedding = embedder.generate_embedding(doc['content'][:500])
-            vs.collection.add(
-                ids=[doc['id']],
-                embeddings=[embedding],
-                documents=[doc['content']],
-                metadatas=[doc['metadata']]
-            )
+
+        vs.add_documents(documents)
         
         return {
             "status": "success",

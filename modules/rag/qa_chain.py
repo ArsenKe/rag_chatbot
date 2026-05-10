@@ -172,7 +172,9 @@ Antwortregeln:
             if not content:
                 continue
             snippet = content[:420]
-            candidate = f"• {snippet}"
+            source = self._normalize_text(str((doc.get("metadata") or {}).get("source", ""))).strip()
+            source_prefix = f"[{source}] " if source else ""
+            candidate = f"• {source_prefix}{snippet}"
             if total + len(candidate) > max_chars:
                 break
             parts.append(candidate)

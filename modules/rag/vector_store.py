@@ -37,19 +37,65 @@ class VectorStore:
         """Add documents to vector store"""
         try:
             for idx, doc in enumerate(documents):
-                # Generate embedding
-                embedding = self.embedding_generator.generate_embedding(doc['content'])
-                
-                self.collection.add(
-                    ids=[doc.get('id', f'doc_{idx}')],
-                    embeddings=[embedding],
-                    documents=[doc['content']],
-                    metadatas=[doc.get('metadata', {})]
+                content = (doc.get("content") or "").strip()
+                if not content:
+                    continue
+
+                base_id = doc.get('id', f'doc_{idx}')
+                metadata = dict(doc.get('metadata', {}) or {})
+                chunks = self._chunk_text(
+                    content,
+                    chunk_size=max(200, self.settings.chunk_size),
+                    chunk_overlap=max(0, min(self.settings.chunk_overlap, self.settings.chunk_size // 2))
                 )
+
+                # Remove old non-chunked entries created by earlier ingestion logic.
+                try:
+                    self.collection.delete(ids=[base_id])
+                except Exception:
+                    pass
+
+                for chunk_index, chunk in enumerate(chunks):
+                    chunk_id = f"{base_id}__chunk_{chunk_index}"
+                    chunk_meta = {
+                        **metadata,
+                        "chunk_index": chunk_index,
+                        "chunk_count": len(chunks),
+                    }
+                    embedding = self.embedding_generator.generate_embedding(chunk)
+
+                    # Upsert avoids duplicate-id failures on re-scrape/re-upload.
+                    self.collection.upsert(
+                        ids=[chunk_id],
+                        embeddings=[embedding],
+                        documents=[chunk],
+                        metadatas=[chunk_meta]
+                    )
             
             print(f"✅ Added {len(documents)} documents to vector store")
         except Exception as e:
             print(f"Error adding documents: {e}")
+
+    def _chunk_text(self, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
+        if not text:
+            return []
+
+        if len(text) <= chunk_size:
+            return [text]
+
+        chunks: List[str] = []
+        step = max(1, chunk_size - chunk_overlap)
+        start = 0
+        while start < len(text):
+            end = min(len(text), start + chunk_size)
+            chunk = text[start:end].strip()
+            if chunk:
+                chunks.append(chunk)
+            if end >= len(text):
+                break
+            start += step
+
+        return chunks
 
     def search(self, query: str, k: int = 5) -> List[Dict]:
         """Search for similar documents"""

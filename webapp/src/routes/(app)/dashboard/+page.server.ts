@@ -15,6 +15,12 @@ export const load: PageServerLoad = async ({ locals }) => {
         openBookings: 0,
         activeDrivers: 0
       },
+      earnings: {
+        day: 0,
+        week: 0,
+        month: 0,
+        year: 0
+      },
       recentBookings: []
     };
   }
@@ -24,14 +30,53 @@ export const load: PageServerLoad = async ({ locals }) => {
   const endOfDay = new Date(startOfDay);
   endOfDay.setDate(endOfDay.getDate() + 1);
 
-  const [todayRevenue, openBookings, activeDrivers, recentBookings] = await Promise.all([
+  const startOfWeek = new Date(startOfDay);
+  const dayOfWeek = startOfWeek.getDay();
+  const offsetToMonday = (dayOfWeek + 6) % 7;
+  startOfWeek.setDate(startOfWeek.getDate() - offsetToMonday);
+
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+  const tripWhereBase = {
+    ...(isDriver && driverId ? { driverId } : {})
+  };
+
+  const [todayRevenue, weekRevenue, monthRevenue, yearRevenue, openBookings, activeDrivers, recentBookings] = await Promise.all([
     prisma.trip.aggregate({
       _sum: { totalAmount: true },
       where: {
-        ...(isDriver && driverId ? { driverId } : {}),
+        ...tripWhereBase,
         startTime: {
           gte: startOfDay,
           lt: endOfDay
+        }
+      }
+    }),
+    prisma.trip.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        ...tripWhereBase,
+        startTime: {
+          gte: startOfWeek
+        }
+      }
+    }),
+    prisma.trip.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        ...tripWhereBase,
+        startTime: {
+          gte: startOfMonth
+        }
+      }
+    }),
+    prisma.trip.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        ...tripWhereBase,
+        startTime: {
+          gte: startOfYear
         }
       }
     }),
@@ -75,6 +120,12 @@ export const load: PageServerLoad = async ({ locals }) => {
       todayRevenue: Number(todayRevenue._sum.totalAmount ?? 0),
       openBookings,
       activeDrivers
+    },
+    earnings: {
+      day: Number(todayRevenue._sum.totalAmount ?? 0),
+      week: Number(weekRevenue._sum.totalAmount ?? 0),
+      month: Number(monthRevenue._sum.totalAmount ?? 0),
+      year: Number(yearRevenue._sum.totalAmount ?? 0)
     },
     recentBookings: recentBookings.map((booking) => ({
       id: booking.id.toString(),

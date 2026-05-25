@@ -134,6 +134,30 @@
   </div>
 </div>
 
+{#if role === 'driver'}
+  <section class="bg-white rounded-xl border p-5 mb-6">
+    <h2 class="font-semibold text-lg mb-3">My Earnings</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="rounded-lg border bg-slate-50 p-3">
+        <p class="text-xs uppercase text-slate-500">Today</p>
+        <p class="text-xl font-semibold">EUR {data.earnings.day.toFixed(2)}</p>
+      </div>
+      <div class="rounded-lg border bg-slate-50 p-3">
+        <p class="text-xs uppercase text-slate-500">This Week</p>
+        <p class="text-xl font-semibold">EUR {data.earnings.week.toFixed(2)}</p>
+      </div>
+      <div class="rounded-lg border bg-slate-50 p-3">
+        <p class="text-xs uppercase text-slate-500">This Month</p>
+        <p class="text-xl font-semibold">EUR {data.earnings.month.toFixed(2)}</p>
+      </div>
+      <div class="rounded-lg border bg-slate-50 p-3">
+        <p class="text-xs uppercase text-slate-500">This Year</p>
+        <p class="text-xl font-semibold">EUR {data.earnings.year.toFixed(2)}</p>
+      </div>
+    </div>
+  </section>
+{/if}
+
 {#if role === 'driver' && !hasDriverMapping}
   <section class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
     <h2 class="font-semibold text-amber-900">Driver Profile Link Required</h2>

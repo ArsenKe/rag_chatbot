@@ -32,6 +32,7 @@
   let errorMsg = '';
   let assignErrorMsg = '';
   let editErrorMsg = '';
+  let earnings = { day: 0, week: 0, month: 0, year: 0 };
   let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   // null = create mode, string = editing that booking id
@@ -98,30 +99,35 @@
     loading = true;
     errorMsg = '';
 
-    const [bookingsRes, customersRes, locationsRes, driversRes, carsRes] = await Promise.all([
+    const [bookingsRes, customersRes, locationsRes, driversRes, carsRes, earningsRes] = await Promise.all([
       fetch('/api/bookings'),
       fetch('/api/customers'),
       fetch('/api/locations'),
       canManageAssignments
         ? fetch('/api/drivers?status=active')
         : Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 })),
-      fetch('/api/cars?status=available')
+      fetch('/api/cars?status=available'),
+      isDriver
+        ? fetch('/api/earnings')
+        : Promise.resolve(new Response(JSON.stringify({ data: { day: 0, week: 0, month: 0, year: 0 } }), { status: 200 }))
     ]);
 
-    const [bookingsPayload, customersPayload, locationsPayload, driversPayload, carsPayload] = await Promise.all([
+    const [bookingsPayload, customersPayload, locationsPayload, driversPayload, carsPayload, earningsPayload] = await Promise.all([
       bookingsRes.json(),
       customersRes.json(),
       locationsRes.json(),
       driversRes.json(),
-      carsRes.json()
+      carsRes.json(),
+      earningsRes.json()
     ]);
 
-    if (!bookingsRes.ok || !customersRes.ok || !locationsRes.ok || !driversRes.ok || !carsRes.ok) {
+    if (!bookingsRes.ok || !customersRes.ok || !locationsRes.ok || !driversRes.ok || !carsRes.ok || !earningsRes.ok) {
       errorMsg =
         bookingsPayload.error?.message ||
         customersPayload.error?.message ||
         locationsPayload.error?.message ||
         driversPayload.error?.message ||
+        earningsPayload.error?.message ||
         carsPayload.error?.message ||
         'Failed to load booking data';
       allRows = [];
@@ -144,6 +150,13 @@
       id: String(c.id),
       label: [c.licensePlate, c.model].filter(Boolean).join(' Â· ')
     }));
+
+    earnings = {
+      day: Number(earningsPayload.data?.day ?? 0),
+      week: Number(earningsPayload.data?.week ?? 0),
+      month: Number(earningsPayload.data?.month ?? 0),
+      year: Number(earningsPayload.data?.year ?? 0)
+    };
 
     const bookings = bookingsPayload.data ?? [];
     bookingOptions = bookings
@@ -510,6 +523,30 @@
 
   <!-- Table panel -->
   <section class="space-y-3">
+    {#if isDriver}
+      <div class="bg-white rounded-xl border p-4">
+        <h3 class="font-semibold mb-2">My Earnings</h3>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+          <div class="rounded-lg border bg-slate-50 p-2">
+            <p class="text-xs uppercase text-slate-500">Today</p>
+            <p class="font-semibold">EUR {earnings.day.toFixed(2)}</p>
+          </div>
+          <div class="rounded-lg border bg-slate-50 p-2">
+            <p class="text-xs uppercase text-slate-500">Week</p>
+            <p class="font-semibold">EUR {earnings.week.toFixed(2)}</p>
+          </div>
+          <div class="rounded-lg border bg-slate-50 p-2">
+            <p class="text-xs uppercase text-slate-500">Month</p>
+            <p class="font-semibold">EUR {earnings.month.toFixed(2)}</p>
+          </div>
+          <div class="rounded-lg border bg-slate-50 p-2">
+            <p class="text-xs uppercase text-slate-500">Year</p>
+            <p class="font-semibold">EUR {earnings.year.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <div class="flex gap-2">
       <input
         bind:value={search}

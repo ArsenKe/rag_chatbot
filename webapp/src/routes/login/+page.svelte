@@ -36,7 +36,7 @@
     }
 
     const next = new URL(window.location.href).searchParams.get('next');
-    window.location.href = next || '/dashboard';
+    window.location.href = next || body?.data?.redirectTo || '/dashboard';
   }
 </script>
 

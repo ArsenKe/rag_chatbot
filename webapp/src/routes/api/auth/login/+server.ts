@@ -4,6 +4,7 @@ import { loginSchema } from '$lib/server/api/schemas';
 import { success, failure, toErrorResponse } from '$lib/server/api/responses';
 import { getSupabaseUserFromAccessToken } from '$lib/server/auth/supabase';
 import { signAuthToken } from '$lib/server/auth/jwt';
+import { HOME_BY_ROLE } from '$lib/rbac/policy';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
   try {
@@ -54,7 +55,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       maxAge: 60 * 60 * 12
     });
 
-    return success({ ok: true, user: { id: user.id, email: user.email, role: user.role } });
+    return success({
+      ok: true,
+      user: { id: user.id, email: user.email, role: user.role },
+      redirectTo: HOME_BY_ROLE[user.role]
+    });
   } catch (cause) {
     return toErrorResponse(cause);
   }

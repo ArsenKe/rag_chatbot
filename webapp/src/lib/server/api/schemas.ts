@@ -57,6 +57,7 @@ export const bookingSchema = z
     dropoffLocationId: z.coerce.bigint(),
     requestedStart: z.string().datetime(),
     requestedEnd: z.string().datetime(),
+    carId: z.coerce.bigint().optional(),
     carClass: z.string().trim().optional().or(z.literal('')),
     status: z.enum(['reserved', 'confirmed', 'completed', 'cancelled']).default('reserved'),
     notes: z.string().trim().optional().or(z.literal(''))

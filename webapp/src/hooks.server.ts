@@ -18,14 +18,15 @@ export const handle: Handle = async ({ event, resolve }) => {
       if (email) {
         const user = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, email: true, role: true }
+          select: { id: true, email: true, role: true, driverId: true }
         });
 
         if (user) {
           event.locals.user = {
             id: user.id,
             role: user.role,
-            email: user.email
+            email: user.email,
+            driverId: user.driverId ? user.driverId.toString() : null
           };
         }
       }
@@ -39,14 +40,15 @@ export const handle: Handle = async ({ event, resolve }) => {
         if (payload) {
           const user = await prisma.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, email: true, role: true }
+            select: { id: true, email: true, role: true, driverId: true }
           });
 
           if (user) {
             event.locals.user = {
               id: user.id,
               role: user.role,
-              email: user.email
+              email: user.email,
+              driverId: user.driverId ? user.driverId.toString() : null
             };
           }
         }
@@ -64,14 +66,15 @@ export const handle: Handle = async ({ event, resolve }) => {
       if (payload) {
         const user = await prisma.user.findUnique({
           where: { id: payload.sub },
-          select: { id: true, email: true, role: true }
+          select: { id: true, email: true, role: true, driverId: true }
         });
 
         if (user) {
           event.locals.user = {
             id: user.id,
             role: user.role,
-            email: user.email
+            email: user.email,
+            driverId: user.driverId ? user.driverId.toString() : null
           };
         }
       }

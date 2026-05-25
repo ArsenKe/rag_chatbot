@@ -9,7 +9,7 @@
     requestedEnd: string;
     status: string;
     customer?: { name?: string };
-    trip?: { driverId?: string; carId?: string } | null;
+    trip?: { driver?: { name?: string }; car?: { licensePlate?: string } } | null;
   };
 
   let events: Array<{ title: string; start: string; end: string; driver: string; car: string }> = [];
@@ -25,43 +25,24 @@
     loading = true;
     errorMsg = '';
 
-    const [bookingsRes, driversRes, carsRes] = await Promise.all([
-      fetch('/api/bookings'),
-      fetch('/api/drivers'),
-      fetch('/api/cars')
-    ]);
+    const bookingsRes = await fetch('/api/bookings');
+    const bookingsPayload = await bookingsRes.json();
 
-    const [bookingsPayload, driversPayload, carsPayload] = await Promise.all([
-      bookingsRes.json(),
-      driversRes.json(),
-      carsRes.json()
-    ]);
-
-    if (!bookingsRes.ok || !driversRes.ok || !carsRes.ok) {
-      errorMsg =
-        bookingsPayload.error?.message ||
-        driversPayload.error?.message ||
-        carsPayload.error?.message ||
-        'Failed to load calendar data';
+    if (!bookingsRes.ok) {
+      errorMsg = bookingsPayload.error?.message || 'Failed to load calendar data';
       events = [];
       loading = false;
       return;
     }
 
-    const drivers = new Map<string, string>(
-      (driversPayload.data ?? []).map((driver: any) => [String(driver.id), String(driver.name)])
-    );
-    const cars = new Map<string, string>(
-      (carsPayload.data ?? []).map((car: any) => [String(car.id), String(car.licensePlate)])
-    );
     const bookings = (bookingsPayload.data ?? []) as BookingRow[];
 
     events = bookings.map((booking) => ({
       title: booking.customer?.name ? `${booking.customer.name} (${booking.status})` : `Booking ${booking.id}`,
       start: formatCalendarDate(booking.requestedStart),
       end: formatCalendarDate(booking.requestedEnd),
-      driver: booking.trip?.driverId ? (drivers.get(booking.trip.driverId.toString()) ?? 'Unassigned') : 'Unassigned',
-      car: booking.trip?.carId ? (cars.get(booking.trip.carId.toString()) ?? 'Unassigned') : 'Unassigned'
+      driver: booking.trip?.driver?.name ?? 'Unassigned',
+      car: booking.trip?.car?.licensePlate ?? 'Unassigned'
     }));
 
     loading = false;

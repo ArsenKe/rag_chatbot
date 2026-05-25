@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
-
-export type AppRole = 'admin' | 'manager' | 'driver';
+import type { AppRole } from '$lib/rbac/policy';
 
 export function requireRole(currentRole: AppRole | undefined, allowed: AppRole[]) {
   if (!currentRole || !allowed.includes(currentRole)) {

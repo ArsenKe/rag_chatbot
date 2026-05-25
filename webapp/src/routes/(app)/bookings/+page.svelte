@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { supabase } from '$lib/supabase/client';
 
   type BookingStatus = 'reserved' | 'confirmed' | 'completed' | 'cancelled';
@@ -48,6 +49,7 @@
     dropoffLocationId: '',
     requestedStart: '',
     requestedEnd: '',
+    carId: '',
     carClass: '',
     notes: ''
   };
@@ -64,6 +66,8 @@
     carId: '',
     override: false
   };
+
+  $: isDriver = $page.data.user?.role === 'driver';
 
   $: filtered = allRows.filter((b) => {
     const matchSearch =
@@ -86,7 +90,7 @@
       fetch('/api/bookings'),
       fetch('/api/customers'),
       fetch('/api/locations'),
-      fetch('/api/drivers?status=active'),
+      isDriver ? Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 })) : fetch('/api/drivers?status=active'),
       fetch('/api/cars?status=available')
     ]);
 
@@ -159,6 +163,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
+        carId: form.carId || undefined,
         requestedStart: new Date(form.requestedStart).toISOString(),
         requestedEnd: new Date(form.requestedEnd).toISOString()
       })
@@ -166,7 +171,7 @@
     const payload = await res.json();
     saving = false;
     if (!res.ok) { errorMsg = payload.error?.message ?? 'Failed to create booking'; return; }
-    form = { customerId: '', pickupLocationId: '', dropoffLocationId: '', requestedStart: '', requestedEnd: '', carClass: '', notes: '' };
+    form = { customerId: '', pickupLocationId: '', dropoffLocationId: '', requestedStart: '', requestedEnd: '', carId: '', carClass: '', notes: '' };
     await loadBookings();
   }
 
@@ -215,7 +220,7 @@
     if (!assignForm.bookingId) { assignErrorMsg = 'Select a booking to assign.'; return; }
     const bookingId = assignForm.bookingId;
     const previousRows = allRows;
-    allRows = allRows.map((r) => r.id === bookingId ? { ...r, status: 'confirmed' as BookingStatus } : r);
+    allRows = allRows.map((r) => r.id === bookingId ? { ...r, status: 'reserved' as BookingStatus, assigned: 'yes' } : r);
     assigning = true;
     const res = await fetch('/api/assignments', {
       method: 'POST',
@@ -225,9 +230,20 @@
     const payload = await res.json();
     assigning = false;
     if (!res.ok) { allRows = previousRows; assignErrorMsg = payload.error?.message ?? 'Failed to assign'; return; }
-    allRows = allRows.map((r) => r.id === bookingId ? { ...r, status: 'confirmed' as BookingStatus, assigned: 'yes' } : r);
+    allRows = allRows.map((r) => r.id === bookingId ? { ...r, status: 'reserved' as BookingStatus, assigned: 'yes' } : r);
     assignForm = { bookingId: '', driverId: '', carId: '', override: false };
     void queueRefresh();
+  }
+
+  async function acceptRide(id: string) {
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'confirmed' })
+    });
+    const payload = await res.json();
+    if (!res.ok) { errorMsg = payload.error?.message ?? 'Failed to accept ride'; return; }
+    await loadBookings();
   }
 
   function queueRefresh() {
@@ -261,7 +277,58 @@
 <div class="grid gap-6 lg:grid-cols-[420px,minmax(0,1fr)]">
   <!-- Left panel: create / edit / assign -->
   <section class="bg-white rounded-xl border shadow-sm p-5 space-y-4">
-    {#if editingId}
+    {#if isDriver}
+      <div>
+        <h2 class="text-xl font-semibold">Add Street Trip</h2>
+        <p class="text-sm text-slate-500 mt-1">Create and self-assign trips for clients you find on the street.</p>
+      </div>
+      <div class="space-y-3">
+        <select bind:value={form.customerId} class="w-full rounded-lg border px-3 py-2">
+          <option value="">Select customer</option>
+          {#each customers as c}
+            <option value={c.id}>{c.name}</option>
+          {/each}
+        </select>
+        <select bind:value={form.pickupLocationId} class="w-full rounded-lg border px-3 py-2">
+          <option value="">Pickup location</option>
+          {#each locations as l}
+            <option value={l.id}>{l.label}</option>
+          {/each}
+        </select>
+        <select bind:value={form.dropoffLocationId} class="w-full rounded-lg border px-3 py-2">
+          <option value="">Dropoff location</option>
+          {#each locations as l}
+            <option value={l.id}>{l.label}</option>
+          {/each}
+        </select>
+        <input bind:value={form.requestedStart} class="w-full rounded-lg border px-3 py-2" type="datetime-local" />
+        <input bind:value={form.requestedEnd} class="w-full rounded-lg border px-3 py-2" type="datetime-local" />
+        <select bind:value={form.carId} class="w-full rounded-lg border px-3 py-2">
+          <option value="">Auto-pick available car</option>
+          {#each cars as c}
+            <option value={c.id}>{c.label}</option>
+          {/each}
+        </select>
+        <input bind:value={form.carClass} class="w-full rounded-lg border px-3 py-2" placeholder="Requested car class (optional)" />
+        <textarea bind:value={form.notes} class="w-full rounded-lg border px-3 py-2 text-sm" rows="2" placeholder="Trip notes"></textarea>
+      </div>
+
+      <button
+        class="w-full bg-brand hover:bg-brand-dark text-white rounded-lg py-2 font-semibold disabled:opacity-60"
+        on:click={createBooking}
+        disabled={saving}
+      >{saving ? 'Saving…' : 'Create my trip'}</button>
+
+      {#if errorMsg}
+        <p class="text-sm text-red-600">{errorMsg}</p>
+      {/if}
+
+      {#if !customers.length || !locations.length}
+        <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          Add customers and locations first, then create the trip.
+        </p>
+      {/if}
+    {:else if editingId}
       <!-- Edit mode -->
       <div>
         <h2 class="text-xl font-semibold">Edit Booking</h2>
@@ -334,7 +401,7 @@
 
       <!-- Quick Assign -->
       <div class="border-t pt-4 space-y-3">
-        <h3 class="text-sm font-semibold text-slate-700">Quick Assign</h3>
+        <h3 class="text-sm font-semibold text-slate-700">Offer Ride</h3>
         <select bind:value={assignForm.bookingId} class="w-full rounded-lg border px-3 py-2">
           <option value="">Select unassigned booking</option>
           {#each bookingOptions as b}
@@ -361,7 +428,7 @@
           class="w-full rounded-lg bg-slate-900 text-white py-2 font-semibold disabled:opacity-60"
           on:click={assignBooking}
           disabled={assigning}
-        >{assigning ? 'Assigningâ€¦' : 'Assign booking'}</button>
+        >{assigning ? 'Offeringâ€¦' : 'Offer ride to driver'}</button>
         {#if assignErrorMsg}
           <p class="text-sm text-amber-700">{assignErrorMsg}</p>
         {/if}
@@ -436,20 +503,37 @@
                     </span>
                   </td>
                   <td class="px-4 py-2 text-slate-500">{b.assigned}</td>
-                  <td class="px-4 py-2">
-                    <div class="flex gap-1">
-                      <button
-                        class="px-2 py-1 text-xs rounded border hover:bg-teal-50 hover:border-brand disabled:opacity-40"
-                        disabled={b.status === 'cancelled'}
-                        on:click={() => startEdit(b)}
-                      >Edit</button>
-                      <button
-                        class="px-2 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                        disabled={b.status === 'cancelled' || cancelling === b.id}
-                        on:click={() => cancelBooking(b.id)}
-                      >{cancelling === b.id ? 'â€¦' : 'Cancel'}</button>
-                    </div>
-                  </td>
+                  {#if !isDriver}
+                    <td class="px-4 py-2">
+                      <div class="flex gap-1">
+                        <button
+                          class="px-2 py-1 text-xs rounded border hover:bg-teal-50 hover:border-brand disabled:opacity-40"
+                          disabled={b.status === 'cancelled'}
+                          on:click={() => startEdit(b)}
+                        >Edit</button>
+                        <button
+                          class="px-2 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
+                          disabled={b.status === 'cancelled' || cancelling === b.id}
+                          on:click={() => cancelBooking(b.id)}
+                        >{cancelling === b.id ? 'â€¦' : 'Cancel'}</button>
+                      </div>
+                    </td>
+                  {:else}
+                    <td class="px-4 py-2">
+                      <div class="flex gap-1">
+                        <button
+                          class="px-2 py-1 text-xs rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
+                          disabled={b.assigned !== 'yes' || b.status !== 'reserved'}
+                          on:click={() => acceptRide(b.id)}
+                        >Accept</button>
+                        <button
+                          class="px-2 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
+                          disabled={b.assigned !== 'yes' || b.status === 'cancelled' || cancelling === b.id}
+                          on:click={() => cancelBooking(b.id)}
+                        >{cancelling === b.id ? '…' : 'Cancel'}</button>
+                      </div>
+                    </td>
+                  {/if}
                 </tr>
               {/each}
             </tbody>

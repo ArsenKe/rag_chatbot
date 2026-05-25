@@ -6,7 +6,7 @@ import { success, toErrorResponse } from '$lib/server/api/responses';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   try {
-    requireRole(locals.user?.role, ['admin', 'manager']);
+    requireRole(locals.user?.role, ['admin', 'manager', 'driver']);
 
     const status = url.searchParams.get('status');
     const cars = await prisma.car.findMany({

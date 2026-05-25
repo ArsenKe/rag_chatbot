@@ -1,0 +1,12 @@
+{
+  "checks": [
+    {"path": "/api/bookings", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 200}},
+    {"path": "/api/reports", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 403}},
+    {"path": "/api/drivers", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 403}},
+    {"path": "/api/cars", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 200}},
+    {"path": "/api/customers", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 200}},
+    {"path": "/api/locations", "method": "GET", "expected": {"admin": 200, "manager": 200, "driver": 200}},
+    {"path": "/api/knowledge/stats", "method": "GET", "expected": {"admin": 200, "manager": 403, "driver": 403}},
+    {"path": "/api/users", "method": "GET", "expected": {"admin": 200, "manager": 403, "driver": 403}}
+  ]
+}

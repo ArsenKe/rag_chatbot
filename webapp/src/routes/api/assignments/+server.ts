@@ -81,22 +81,29 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       Math.floor((booking.requestedEnd.getTime() - booking.requestedStart.getTime()) / 60000)
     );
 
-    const created = await prisma.trip.create({
-      data: {
-        bookingId: booking.id,
-        driverId,
-        carId,
-        customerId: booking.customerId,
-        pickupLocationId: booking.pickupLocationId,
-        dropoffLocationId: booking.dropoffLocationId,
-        startTime: booking.requestedStart,
-        endTime: booking.requestedEnd,
-        status: 'confirmed',
-        durationMinutes,
-        fareAmount: 0,
-        discountAmount: 0,
-        totalAmount: 0
-      }
+    const created = await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id: booking.id },
+        data: { status: 'reserved' }
+      });
+
+      return tx.trip.create({
+        data: {
+          bookingId: booking.id,
+          driverId,
+          carId,
+          customerId: booking.customerId,
+          pickupLocationId: booking.pickupLocationId,
+          dropoffLocationId: booking.dropoffLocationId,
+          startTime: booking.requestedStart,
+          endTime: booking.requestedEnd,
+          status: 'reserved',
+          durationMinutes,
+          fareAmount: 0,
+          discountAmount: 0,
+          totalAmount: 0
+        }
+      });
     });
 
     if (locals.user?.id) {

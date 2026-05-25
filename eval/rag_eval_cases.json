@@ -1,0 +1,66 @@
+[
+  {
+    "id": "fleet_basic",
+    "question": "What vehicles are in your fleet?",
+    "expected_keywords_any": ["tesla", "bmw", "audi", "model s", "i7", "e-tron"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": ["cannot verify"],
+    "require_source": false,
+    "language": "en",
+    "regression": true
+  },
+  {
+    "id": "premium_services",
+    "question": "What premium services do you offer?",
+    "expected_keywords_any": ["champagne", "caviar", "music", "privacy", "massage"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": ["cannot verify"],
+    "require_source": false,
+    "language": "en",
+    "regression": true
+  },
+  {
+    "id": "booking_window_de",
+    "question": "Wie lange im Voraus muss ich buchen?",
+    "expected_keywords_any": ["2", "stunden", "voraus"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": [],
+    "require_source": false,
+    "language": "de",
+    "regression": true
+  },
+  {
+    "id": "contact_email_or_phone",
+    "question": "How can I contact your office?",
+    "expected_keywords_any": ["@", "+43", "contact", "booking"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": [],
+    "require_source": false,
+    "language": "en",
+    "regression": true
+  },
+  {
+    "id": "language_followup_de",
+    "question": "ja",
+    "history": [
+      {"role": "user", "text": "Warum wechselst du die Sprache?"},
+      {"role": "assistant", "text": "Entschuldigung. Ich antworte ab jetzt auf Deutsch."}
+    ],
+    "expected_keywords_any": ["deutsch", "ich", "helfen", "natuerlich", "klar"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": ["i can", "please check"],
+    "require_source": false,
+    "language": "de",
+    "regression": true
+  },
+  {
+    "id": "no_faq_dump",
+    "question": "What tours do you have?",
+    "expected_keywords_any": ["tour", "platinum", "gold", "wien", "private"],
+    "expected_keywords_all": [],
+    "forbidden_keywords": ["how can i help", "cannot verify any other contact"],
+    "require_source": false,
+    "language": "en",
+    "regression": true
+  }
+]

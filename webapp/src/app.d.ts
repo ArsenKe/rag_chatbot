@@ -7,6 +7,7 @@ declare global {
         id: string;
         role: 'admin' | 'manager' | 'driver';
         email?: string;
+        driverId?: string | null;
       } | null;
     }
   }

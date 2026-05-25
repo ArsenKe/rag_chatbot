@@ -6,7 +6,7 @@ import { success, toErrorResponse } from '$lib/server/api/responses';
 
 export const GET: RequestHandler = async ({ locals }) => {
   try {
-    requireRole(locals.user?.role, ['admin', 'manager']);
+    requireRole(locals.user?.role, ['admin', 'manager', 'driver']);
 
     const customers = await prisma.customer.findMany({
       orderBy: { id: 'desc' }
@@ -20,7 +20,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
   try {
-    requireRole(locals.user?.role, ['admin', 'manager']);
+    requireRole(locals.user?.role, ['admin', 'manager', 'driver']);
 
     const body = customerSchema.parse(await request.json());
     const created = await prisma.customer.create({

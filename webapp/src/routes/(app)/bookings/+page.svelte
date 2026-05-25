@@ -45,12 +45,21 @@
 
   let form = {
     customerId: '',
+    customerName: '',
+    customerPhone: '',
     pickupLocationId: '',
+    pickupText: '',
     dropoffLocationId: '',
+    dropoffText: '',
     requestedStart: '',
     requestedEnd: '',
     carId: '',
     carClass: '',
+    passengerCount: 1,
+    fareAmount: '',
+    discountAmount: '',
+    discountNote: '',
+    tripDescription: '',
     notes: ''
   };
 
@@ -173,7 +182,12 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
+        customerId: form.customerId || undefined,
+        pickupLocationId: form.pickupLocationId || undefined,
+        dropoffLocationId: form.dropoffLocationId || undefined,
         carId: form.carId || undefined,
+        fareAmount: form.fareAmount ? Number(form.fareAmount) : undefined,
+        discountAmount: form.discountAmount ? Number(form.discountAmount) : undefined,
         requestedStart: new Date(form.requestedStart).toISOString(),
         requestedEnd: new Date(form.requestedEnd).toISOString()
       })
@@ -181,7 +195,25 @@
     const payload = await res.json();
     saving = false;
     if (!res.ok) { errorMsg = payload.error?.message ?? 'Failed to create booking'; return; }
-    form = { customerId: '', pickupLocationId: '', dropoffLocationId: '', requestedStart: '', requestedEnd: '', carId: '', carClass: '', notes: '' };
+    form = {
+      customerId: '',
+      customerName: '',
+      customerPhone: '',
+      pickupLocationId: '',
+      pickupText: '',
+      dropoffLocationId: '',
+      dropoffText: '',
+      requestedStart: '',
+      requestedEnd: '',
+      carId: '',
+      carClass: '',
+      passengerCount: 1,
+      fareAmount: '',
+      discountAmount: '',
+      discountNote: '',
+      tripDescription: '',
+      notes: ''
+    };
     await loadBookings();
   }
 
@@ -299,23 +331,27 @@
       </div>
       <div class="space-y-3">
         <select bind:value={form.customerId} class="w-full rounded-lg border px-3 py-2">
-          <option value="">Select customer</option>
+          <option value="">One-time street customer (enter below)</option>
           {#each customers as c}
             <option value={c.id}>{c.name}</option>
           {/each}
         </select>
+        <input bind:value={form.customerName} class="w-full rounded-lg border px-3 py-2" placeholder="Customer name (required if one-time)" />
+        <input bind:value={form.customerPhone} class="w-full rounded-lg border px-3 py-2" placeholder="Customer phone (optional)" />
         <select bind:value={form.pickupLocationId} class="w-full rounded-lg border px-3 py-2">
-          <option value="">Pickup location</option>
+          <option value="">Custom pickup (enter below)</option>
           {#each locations as l}
             <option value={l.id}>{l.label}</option>
           {/each}
         </select>
+        <input bind:value={form.pickupText} class="w-full rounded-lg border px-3 py-2" placeholder="Pickup address/name (required if custom)" />
         <select bind:value={form.dropoffLocationId} class="w-full rounded-lg border px-3 py-2">
-          <option value="">Dropoff location</option>
+          <option value="">Custom dropoff (enter below)</option>
           {#each locations as l}
             <option value={l.id}>{l.label}</option>
           {/each}
         </select>
+        <input bind:value={form.dropoffText} class="w-full rounded-lg border px-3 py-2" placeholder="Dropoff address/name (required if custom)" />
         <input bind:value={form.requestedStart} class="w-full rounded-lg border px-3 py-2" type="datetime-local" />
         <input bind:value={form.requestedEnd} class="w-full rounded-lg border px-3 py-2" type="datetime-local" />
         <select bind:value={form.carId} class="w-full rounded-lg border px-3 py-2">
@@ -325,6 +361,11 @@
           {/each}
         </select>
         <input bind:value={form.carClass} class="w-full rounded-lg border px-3 py-2" placeholder="Requested car class (optional)" />
+        <input bind:value={form.passengerCount} class="w-full rounded-lg border px-3 py-2" type="number" min="1" max="12" placeholder="Passengers" />
+        <input bind:value={form.fareAmount} class="w-full rounded-lg border px-3 py-2" type="number" min="0" step="0.01" placeholder="Fare amount" />
+        <input bind:value={form.discountAmount} class="w-full rounded-lg border px-3 py-2" type="number" min="0" step="0.01" placeholder="Discount amount (optional)" />
+        <input bind:value={form.discountNote} class="w-full rounded-lg border px-3 py-2" placeholder="Discount details/time (optional)" />
+        <textarea bind:value={form.tripDescription} class="w-full rounded-lg border px-3 py-2 text-sm" rows="2" placeholder="Trip description"></textarea>
         <textarea bind:value={form.notes} class="w-full rounded-lg border px-3 py-2 text-sm" rows="2" placeholder="Trip notes"></textarea>
       </div>
 
@@ -338,11 +379,9 @@
         <p class="text-sm text-red-600">{errorMsg}</p>
       {/if}
 
-      {#if !customers.length || !locations.length}
-        <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-          Add customers and locations first, then create the trip.
-        </p>
-      {/if}
+      <p class="text-xs text-slate-500">
+        Drivers can create one-time street customers and custom locations directly in this form.
+      </p>
     {:else if isDriver}
       <div>
         <h2 class="text-xl font-semibold">Driver Access Setup Required</h2>

@@ -54,13 +54,22 @@ export const customerSchema = z.object({
 
 export const bookingSchema = z
   .object({
-    customerId: z.coerce.bigint(),
-    pickupLocationId: z.coerce.bigint(),
-    dropoffLocationId: z.coerce.bigint(),
+    customerId: z.coerce.bigint().optional(),
+    pickupLocationId: z.coerce.bigint().optional(),
+    dropoffLocationId: z.coerce.bigint().optional(),
+    customerName: z.string().trim().min(2).optional().or(z.literal('')),
+    customerPhone: z.string().trim().optional().or(z.literal('')),
+    pickupText: z.string().trim().min(2).optional().or(z.literal('')),
+    dropoffText: z.string().trim().min(2).optional().or(z.literal('')),
     requestedStart: z.string().datetime(),
     requestedEnd: z.string().datetime(),
     carId: z.coerce.bigint().optional(),
     carClass: z.string().trim().optional().or(z.literal('')),
+    passengerCount: z.coerce.number().int().min(1).max(12).optional(),
+    fareAmount: z.coerce.number().min(0).optional(),
+    discountAmount: z.coerce.number().min(0).optional(),
+    discountNote: z.string().trim().optional().or(z.literal('')),
+    tripDescription: z.string().trim().optional().or(z.literal('')),
     status: z.enum(['reserved', 'confirmed', 'completed', 'cancelled']).default('reserved'),
     notes: z.string().trim().optional().or(z.literal(''))
   })

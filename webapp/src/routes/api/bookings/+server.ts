@@ -4,6 +4,28 @@ import { requireRole } from '$lib/server/rbac/roles';
 import { bookingSchema } from '$lib/server/api/schemas';
 import { success, failure, toErrorResponse } from '$lib/server/api/responses';
 
+function buildDriverNotes(body: {
+  notes?: string;
+  tripDescription?: string;
+  passengerCount?: number;
+  discountNote?: string;
+}) {
+  const parts: string[] = [];
+  if (body.tripDescription) {
+    parts.push(`Trip description: ${body.tripDescription}`);
+  }
+  if (body.passengerCount) {
+    parts.push(`Passengers: ${body.passengerCount}`);
+  }
+  if (body.discountNote) {
+    parts.push(`Discount details: ${body.discountNote}`);
+  }
+  if (body.notes) {
+    parts.push(`Notes: ${body.notes}`);
+  }
+  return parts.join('\n') || null;
+}
+
 async function hasTripConflict(driverId: bigint, carId: bigint, start: Date, end: Date): Promise<boolean> {
   const [driverConflict, carConflict] = await Promise.all([
     prisma.trip.findFirst({
@@ -75,16 +97,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const isDriver = locals.user?.role === 'driver';
 
     const body = bookingSchema.parse(await request.json());
-    const [customer, pickup, dropoff] = await Promise.all([
-      prisma.customer.findUnique({ where: { id: body.customerId }, select: { id: true } }),
-      prisma.location.findUnique({ where: { id: body.pickupLocationId }, select: { id: true } }),
-      prisma.location.findUnique({ where: { id: body.dropoffLocationId }, select: { id: true } })
-    ]);
-
-    if (!customer || !pickup || !dropoff) {
-      return failure(400, 'invalid_relation', 'Customer and locations must exist before creating a booking.');
-    }
-
     const requestedStart = new Date(body.requestedStart);
     const requestedEnd = new Date(body.requestedEnd);
 
@@ -92,6 +104,56 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       if (!locals.user?.driverId) {
         return failure(403, 'driver_mapping_missing', 'Driver account is missing driver mapping.');
       }
+
+      const customer = body.customerId
+        ? await prisma.customer.findUnique({ where: { id: body.customerId }, select: { id: true } })
+        : body.customerName
+          ? await prisma.customer.create({
+              data: {
+                name: body.customerName,
+                phone: body.customerPhone || null,
+                registrationDate: new Date()
+              },
+              select: { id: true }
+            })
+          : null;
+
+      const pickup = body.pickupLocationId
+        ? await prisma.location.findUnique({ where: { id: body.pickupLocationId }, select: { id: true } })
+        : body.pickupText
+          ? await prisma.location.create({
+              data: {
+                name: body.pickupText,
+                type: 'pickup'
+              },
+              select: { id: true }
+            })
+          : null;
+
+      const dropoff = body.dropoffLocationId
+        ? await prisma.location.findUnique({ where: { id: body.dropoffLocationId }, select: { id: true } })
+        : body.dropoffText
+          ? await prisma.location.create({
+              data: {
+                name: body.dropoffText,
+                type: 'dropoff'
+              },
+              select: { id: true }
+            })
+          : null;
+
+      if (!customer || !pickup || !dropoff) {
+        return failure(
+          400,
+          'invalid_driver_trip_payload',
+          'Provide existing customer/location IDs or enter one-time customer and pickup/dropoff text.'
+        );
+      }
+
+      const fareAmount = Number(body.fareAmount ?? 0);
+      const discountAmount = Number(body.discountAmount ?? 0);
+      const totalAmount = Math.max(0, fareAmount - discountAmount);
+      const combinedNotes = buildDriverNotes(body);
 
       const driverId = BigInt(locals.user.driverId);
       const selectedCar = body.carId
@@ -121,14 +183,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       const created = await prisma.$transaction(async (tx) => {
         const booking = await tx.booking.create({
           data: {
-            customerId: body.customerId,
-            pickupLocationId: body.pickupLocationId,
-            dropoffLocationId: body.dropoffLocationId,
+            customerId: customer.id,
+            pickupLocationId: pickup.id,
+            dropoffLocationId: dropoff.id,
             requestedStart,
             requestedEnd,
             carClass: body.carClass || null,
             status: 'confirmed',
-            notes: body.notes || null
+            notes: combinedNotes
           }
         });
 
@@ -139,16 +201,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             bookingId: booking.id,
             driverId,
             carId: selectedCar.id,
-            customerId: body.customerId,
-            pickupLocationId: body.pickupLocationId,
-            dropoffLocationId: body.dropoffLocationId,
+            customerId: customer.id,
+            pickupLocationId: pickup.id,
+            dropoffLocationId: dropoff.id,
             startTime: requestedStart,
             endTime: requestedEnd,
             status: 'confirmed',
             durationMinutes,
-            fareAmount: '0',
-            discountAmount: '0',
-            totalAmount: '0'
+            fareAmount: fareAmount.toFixed(2),
+            discountAmount: discountAmount.toFixed(2),
+            totalAmount: totalAmount.toFixed(2)
           }
         });
 
@@ -173,6 +235,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       });
 
       return success(created, { status: 201 });
+    }
+
+    if (!body.customerId || !body.pickupLocationId || !body.dropoffLocationId) {
+      return failure(400, 'invalid_relation', 'Customer and locations must exist before creating a booking.');
+    }
+
+    const [customer, pickup, dropoff] = await Promise.all([
+      prisma.customer.findUnique({ where: { id: body.customerId }, select: { id: true } }),
+      prisma.location.findUnique({ where: { id: body.pickupLocationId }, select: { id: true } }),
+      prisma.location.findUnique({ where: { id: body.dropoffLocationId }, select: { id: true } })
+    ]);
+
+    if (!customer || !pickup || !dropoff) {
+      return failure(400, 'invalid_relation', 'Customer and locations must exist before creating a booking.');
     }
 
     const created = await prisma.booking.create({

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page as pageStore } from '$app/stores';
   import { supabase } from '$lib/supabase/client';
 
   type BookingStatus = 'reserved' | 'confirmed' | 'completed' | 'cancelled';
@@ -41,7 +41,7 @@
   // Filters / pagination
   let search = '';
   let statusFilter = '';
-  let page = 0;
+  let pageIndex = 0;
 
   let form = {
     customerId: '',
@@ -67,7 +67,10 @@
     override: false
   };
 
-  $: isDriver = $page.data.user?.role === 'driver';
+  $: role = $pageStore.data.user?.role;
+  $: isDriver = role === 'driver';
+  $: canManageAssignments = role === 'admin' || role === 'manager';
+  $: hasDriverMapping = Boolean($pageStore.data.user?.driverId);
 
   $: filtered = allRows.filter((b) => {
     const matchSearch =
@@ -79,8 +82,8 @@
     return matchSearch && matchStatus;
   });
   $: totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  $: { if (page >= totalPages) page = Math.max(0, totalPages - 1); }
-  $: paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  $: { if (pageIndex >= totalPages) pageIndex = Math.max(0, totalPages - 1); }
+  $: paginated = filtered.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
 
   async function loadBookings() {
     loading = true;
@@ -90,7 +93,9 @@
       fetch('/api/bookings'),
       fetch('/api/customers'),
       fetch('/api/locations'),
-      isDriver ? Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 })) : fetch('/api/drivers?status=active'),
+      canManageAssignments
+        ? fetch('/api/drivers?status=active')
+        : Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 })),
       fetch('/api/cars?status=available')
     ]);
 
@@ -156,6 +161,11 @@
   }
 
   async function createBooking() {
+    if (isDriver && !hasDriverMapping) {
+      errorMsg = 'Your account is missing a linked driver profile. Ask admin to link your driver account first.';
+      return;
+    }
+
     saving = true;
     errorMsg = '';
     const res = await fetch('/api/bookings', {
@@ -236,6 +246,11 @@
   }
 
   async function acceptRide(id: string) {
+    if (isDriver && !hasDriverMapping) {
+      errorMsg = 'Your account is missing a linked driver profile. Ask admin to link your driver account first.';
+      return;
+    }
+
     const res = await fetch(`/api/bookings/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -277,7 +292,7 @@
 <div class="grid gap-6 lg:grid-cols-[420px,minmax(0,1fr)]">
   <!-- Left panel: create / edit / assign -->
   <section class="bg-white rounded-xl border shadow-sm p-5 space-y-4">
-    {#if isDriver}
+    {#if isDriver && hasDriverMapping}
       <div>
         <h2 class="text-xl font-semibold">Add Street Trip</h2>
         <p class="text-sm text-slate-500 mt-1">Create and self-assign trips for clients you find on the street.</p>
@@ -328,6 +343,14 @@
           Add customers and locations first, then create the trip.
         </p>
       {/if}
+    {:else if isDriver}
+      <div>
+        <h2 class="text-xl font-semibold">Driver Access Setup Required</h2>
+        <p class="text-sm text-slate-500 mt-1">Your account can view bookings, but actions are disabled until a driver profile is linked.</p>
+      </div>
+      <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+        Ask an admin to open Users, edit your account, set role to driver, and select your linked driver profile.
+      </p>
     {:else if editingId}
       <!-- Edit mode -->
       <div>
@@ -451,11 +474,11 @@
     <div class="flex gap-2">
       <input
         bind:value={search}
-        on:input={() => (page = 0)}
+        on:input={() => (pageIndex = 0)}
         class="flex-1 rounded-lg border px-3 py-2 text-sm"
         placeholder="Search by customer, pickup or dropoffâ€¦"
       />
-      <select bind:value={statusFilter} on:change={() => (page = 0)} class="rounded-lg border px-3 py-2 text-sm">
+      <select bind:value={statusFilter} on:change={() => (pageIndex = 0)} class="rounded-lg border px-3 py-2 text-sm">
         <option value="">All statuses</option>
         <option value="reserved">Reserved</option>
         <option value="confirmed">Confirmed</option>
@@ -523,12 +546,12 @@
                       <div class="flex gap-1">
                         <button
                           class="px-2 py-1 text-xs rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
-                          disabled={b.assigned !== 'yes' || b.status !== 'reserved'}
+                          disabled={!hasDriverMapping || b.assigned !== 'yes' || b.status !== 'reserved'}
                           on:click={() => acceptRide(b.id)}
                         >Accept</button>
                         <button
                           class="px-2 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                          disabled={b.assigned !== 'yes' || b.status === 'cancelled' || cancelling === b.id}
+                          disabled={!hasDriverMapping || b.assigned !== 'yes' || b.status === 'cancelled' || cancelling === b.id}
                           on:click={() => cancelBooking(b.id)}
                         >{cancelling === b.id ? '…' : 'Cancel'}</button>
                       </div>
@@ -541,9 +564,9 @@
         </div>
         {#if totalPages > 1}
           <div class="flex items-center justify-between px-4 py-3 border-t text-sm">
-            <button class="px-3 py-1 rounded border hover:bg-slate-50 disabled:opacity-40" on:click={() => page--} disabled={page === 0}>â† Prev</button>
-            <span class="text-slate-500">Page {page + 1} of {totalPages} Â· {filtered.length} total</span>
-            <button class="px-3 py-1 rounded border hover:bg-slate-50 disabled:opacity-40" on:click={() => page++} disabled={page >= totalPages - 1}>Next â†’</button>
+            <button class="px-3 py-1 rounded border hover:bg-slate-50 disabled:opacity-40" on:click={() => pageIndex--} disabled={pageIndex === 0}>â† Prev</button>
+            <span class="text-slate-500">Page {pageIndex + 1} of {totalPages} Â· {filtered.length} total</span>
+            <button class="px-3 py-1 rounded border hover:bg-slate-50 disabled:opacity-40" on:click={() => pageIndex++} disabled={pageIndex >= totalPages - 1}>Next â†’</button>
           </div>
         {/if}
       {/if}

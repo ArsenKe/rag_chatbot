@@ -3,7 +3,6 @@ import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
 import { appUserCreateSchema } from '$lib/server/api/schemas';
 import { success, toErrorResponse } from '$lib/server/api/responses';
-import { hashPassword } from '$lib/server/auth/password';
 
 export const GET: RequestHandler = async ({ locals }) => {
   try {
@@ -35,8 +34,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       data: {
         email: body.email,
         role: body.role,
-        driverId: body.role === 'driver' ? body.driverId ?? null : null,
-        passwordHash: body.password ? hashPassword(body.password) : null
+        driverId: body.role === 'driver' ? body.driverId ?? null : null
       },
       select: {
         id: true,

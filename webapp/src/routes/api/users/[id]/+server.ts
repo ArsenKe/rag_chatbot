@@ -3,7 +3,6 @@ import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
 import { appUserUpdateSchema } from '$lib/server/api/schemas';
 import { failure, success, toErrorResponse } from '$lib/server/api/responses';
-import { hashPassword } from '$lib/server/auth/password';
 
 async function isLastAdmin(userId: string) {
   const target = await prisma.user.findUnique({
@@ -48,8 +47,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       data: {
         email: body.email,
         role: body.role,
-        driverId: body.role === 'driver' ? body.driverId ?? null : null,
-        ...(body.password ? { passwordHash: hashPassword(body.password) } : {})
+        driverId: body.role === 'driver' ? body.driverId ?? null : null
       },
       select: {
         id: true,

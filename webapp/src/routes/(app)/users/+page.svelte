@@ -20,10 +20,9 @@
   let editingId: string | null = null;
   let errorMsg = '';
 
-  let form: { email: string; role: AppUser['role']; password: string; driverId: string } = {
+  let form: { email: string; role: AppUser['role']; driverId: string } = {
     email: '',
     role: 'manager',
-    password: '',
     driverId: ''
   };
 
@@ -67,7 +66,6 @@
       body: JSON.stringify({
         email: form.email.trim().toLowerCase(),
         role: form.role,
-        password: form.password.trim() || undefined,
         driverId: form.role === 'driver' && form.driverId ? form.driverId : null
       })
     });
@@ -114,14 +112,13 @@
     form = {
       email: user.email,
       role: user.role,
-      password: '',
       driverId: user.driverId ?? ''
     };
   }
 
   function resetForm() {
     editingId = null;
-    form = { email: '', role: 'manager', password: '', driverId: '' };
+    form = { email: '', role: 'manager', driverId: '' };
   }
 
   async function remove(user: AppUser) {
@@ -156,7 +153,7 @@
     <div>
       <h2 class="text-xl font-semibold">{editingId ? 'Edit User Role' : 'Add User Role'}</h2>
       <p class="text-sm text-slate-500 mt-1">
-        Create role mappings and optional local-password accounts (no Supabase required).
+        Supabase handles identity. This page maps Supabase emails to app roles.
       </p>
     </div>
 
@@ -176,17 +173,10 @@
           {/each}
         </select>
       {/if}
-
-      <input
-        bind:value={form.password}
-        class="w-full rounded-lg border px-3 py-2"
-        placeholder={editingId ? 'Set new local password (optional)' : 'Local password (optional)'}
-        type="password"
-      />
     </div>
 
     <div class="rounded-lg bg-slate-50 border p-3 text-sm text-slate-600">
-      If password is set, the account can log in with Local mode (without Supabase). Driver role should be linked to a driver profile.
+      Driver role should always be linked to a driver profile to avoid access issues.
     </div>
 
     {#if errorMsg}

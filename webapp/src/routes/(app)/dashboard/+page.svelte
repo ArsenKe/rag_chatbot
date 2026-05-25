@@ -40,6 +40,7 @@
   };
 
   const role = data.user?.role ?? 'admin';
+  const hasDriverMapping = role !== 'driver' || Boolean(data.user?.driverId);
   const suggestedPrompts: string[] = PROMPTS[role] ?? PROMPTS.admin;
 
   function scrollToBottom() {
@@ -132,6 +133,15 @@
     <p class="text-2xl font-bold">{data.metrics.activeDrivers}</p>
   </div>
 </div>
+
+{#if role === 'driver' && !hasDriverMapping}
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+    <h2 class="font-semibold text-amber-900">Driver Profile Link Required</h2>
+    <p class="text-sm text-amber-800 mt-1">
+      Your login works, but actions are limited until an admin links your account to a driver profile in Users.
+    </p>
+  </section>
+{/if}
 
 <section class="bg-white rounded-xl border p-5 mb-6">
   <h2 class="font-semibold text-lg mb-3">Recent Bookings</h2>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import ScheduleCalendar from '$lib/components/calendar/ScheduleCalendar.svelte';
   import { supabase } from '$lib/supabase/client';
 
@@ -16,12 +17,21 @@
   let loading = true;
   let errorMsg = '';
   let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  $: isDriver = $page.data.user?.role === 'driver';
+  $: hasDriverMapping = Boolean($page.data.user?.driverId);
 
   function formatCalendarDate(value: string) {
     return new Date(value).toISOString().slice(0, 16).replace('T', ' ');
   }
 
   async function loadCalendar() {
+      if (isDriver && !hasDriverMapping) {
+        events = [];
+        loading = false;
+        errorMsg = '';
+        return;
+      }
+
     loading = true;
     errorMsg = '';
 
@@ -82,6 +92,11 @@
 </script>
 
 <h2 class="text-xl font-semibold mb-4">Schedule Calendar</h2>
+{#if isDriver && !hasDriverMapping}
+  <p class="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+    Your driver account is not linked to a driver profile yet. Ask admin to link your account in Users.
+  </p>
+{/if}
 {#if errorMsg}
   <p class="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMsg}</p>
 {/if}

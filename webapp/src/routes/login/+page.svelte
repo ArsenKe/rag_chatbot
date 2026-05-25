@@ -3,7 +3,6 @@
 
   let email = '';
   let password = '';
-  let authMode: 'supabase' | 'local' = 'supabase';
   let errorMsg = '';
   let loading = false;
 
@@ -28,9 +27,6 @@
     if (code === 'invalid_supabase_session') {
       return 'Supabase session is invalid or expired. Please sign in again.';
     }
-    if (code === 'invalid_local_credentials') {
-      return 'Invalid local account email or password.';
-    }
     return message ?? 'Login failed';
   }
 
@@ -38,29 +34,21 @@
     errorMsg = '';
     loading = true;
 
-    let payload: Record<string, string>;
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-    if (authMode === 'supabase') {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (authError || !authData.session?.access_token) {
-        loading = false;
-        errorMsg = mapAuthError(authError?.message);
-        return;
-      }
-
-      payload = { accessToken: authData.session.access_token };
-    } else {
-      payload = { email: email.trim().toLowerCase(), password };
+    if (authError || !authData.session?.access_token) {
+      loading = false;
+      errorMsg = mapAuthError(authError?.message);
+      return;
     }
 
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ accessToken: authData.session.access_token })
     });
 
     const body = await res.json();
@@ -86,13 +74,6 @@
         <span class="text-sm text-slate-300">Email</span>
         <input bind:value={email} class="w-full mt-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2" type="email" required />
       </label>
-      <label class="block">
-        <span class="text-sm text-slate-300">Login mode</span>
-        <select bind:value={authMode} class="w-full mt-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2">
-          <option value="supabase">Supabase account</option>
-          <option value="local">Local app account</option>
-        </select>
-      </label>
 
       <label class="block">
         <span class="text-sm text-slate-300">Password</span>
@@ -108,7 +89,7 @@
       {/if}
 
       <p class="text-xs text-slate-400">
-        Local mode: admin-created account in Users with password. Supabase mode: Supabase identity + role mapping.
+        Supabase identity is required. Admins manage app roles and driver links in Users.
       </p>
     </div>
   </div>

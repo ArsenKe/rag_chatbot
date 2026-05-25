@@ -12,6 +12,7 @@
   };
 
   let users: AppUser[] = [];
+  let drivers: Array<{ id: string; name: string }> = [];
   let loading = true;
   let saving = false;
   let inviting = false;
@@ -19,9 +20,11 @@
   let editingId: string | null = null;
   let errorMsg = '';
 
-  let form: { email: string; role: AppUser['role'] } = {
+  let form: { email: string; role: AppUser['role']; password: string; driverId: string } = {
     email: '',
-    role: 'manager'
+    role: 'manager',
+    password: '',
+    driverId: ''
   };
 
   async function loadUsers() {
@@ -29,10 +32,12 @@
     errorMsg = '';
 
     const res = await fetch('/api/users');
+    const driversRes = await fetch('/api/drivers?status=active');
     const payload = await res.json();
+    const driversPayload = await driversRes.json();
 
-    if (!res.ok) {
-      errorMsg = payload.error?.message ?? 'Failed to load users';
+    if (!res.ok || !driversRes.ok) {
+      errorMsg = payload.error?.message ?? driversPayload.error?.message ?? 'Failed to load users';
       loading = false;
       return;
     }
@@ -41,6 +46,11 @@
       ...user,
       id: String(user.id),
       driverId: user.driverId == null ? null : String(user.driverId)
+    }));
+
+    drivers = (driversPayload.data ?? []).map((driver: any) => ({
+      id: String(driver.id),
+      name: String(driver.name)
     }));
     loading = false;
   }
@@ -56,7 +66,9 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: form.email.trim().toLowerCase(),
-        role: form.role
+        role: form.role,
+        password: form.password.trim() || undefined,
+        driverId: form.role === 'driver' && form.driverId ? form.driverId : null
       })
     });
 
@@ -101,13 +113,15 @@
     editingId = user.id;
     form = {
       email: user.email,
-      role: user.role
+      role: user.role,
+      password: '',
+      driverId: user.driverId ?? ''
     };
   }
 
   function resetForm() {
     editingId = null;
-    form = { email: '', role: 'manager' };
+    form = { email: '', role: 'manager', password: '', driverId: '' };
   }
 
   async function remove(user: AppUser) {
@@ -142,7 +156,7 @@
     <div>
       <h2 class="text-xl font-semibold">{editingId ? 'Edit User Role' : 'Add User Role'}</h2>
       <p class="text-sm text-slate-500 mt-1">
-        Supabase manages passwords and sessions. This screen maps email addresses to app roles.
+        Create role mappings and optional local-password accounts (no Supabase required).
       </p>
     </div>
 
@@ -153,10 +167,26 @@
         <option value="manager">Manager</option>
         <option value="driver">Driver</option>
       </select>
+
+      {#if form.role === 'driver'}
+        <select bind:value={form.driverId} class="w-full rounded-lg border px-3 py-2">
+          <option value="">Select linked driver profile</option>
+          {#each drivers as driver}
+            <option value={driver.id}>{driver.name} (#{driver.id})</option>
+          {/each}
+        </select>
+      {/if}
+
+      <input
+        bind:value={form.password}
+        class="w-full rounded-lg border px-3 py-2"
+        placeholder={editingId ? 'Set new local password (optional)' : 'Local password (optional)'}
+        type="password"
+      />
     </div>
 
     <div class="rounded-lg bg-slate-50 border p-3 text-sm text-slate-600">
-      Create the identity in Supabase first, then add the same email here to grant app access.
+      If password is set, the account can log in with Local mode (without Supabase). Driver role should be linked to a driver profile.
     </div>
 
     {#if errorMsg}

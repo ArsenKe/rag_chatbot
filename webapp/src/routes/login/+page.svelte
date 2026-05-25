@@ -3,35 +3,71 @@
 
   let email = '';
   let password = '';
+  let authMode: 'supabase' | 'local' = 'supabase';
   let errorMsg = '';
   let loading = false;
+
+  function mapAuthError(message: string | undefined) {
+    const text = (message ?? '').toLowerCase();
+    if (text.includes('invalid login credentials')) {
+      return 'Wrong email or password in Supabase. Reset password or verify the invited email.';
+    }
+    if (text.includes('email not confirmed')) {
+      return 'Email not confirmed yet. Open the Supabase invite/confirmation email first.';
+    }
+    return message ?? 'Supabase sign-in failed';
+  }
+
+  function mapAppError(code: string | undefined, message: string | undefined) {
+    if (code === 'unknown_user') {
+      return 'Account exists in Supabase, but no app role mapping exists. Ask admin to add this email in Users.';
+    }
+    if (code === 'driver_mapping_missing') {
+      return 'Driver role is mapped, but no Driver profile is linked. Ask admin to link user.driverId.';
+    }
+    if (code === 'invalid_supabase_session') {
+      return 'Supabase session is invalid or expired. Please sign in again.';
+    }
+    if (code === 'invalid_local_credentials') {
+      return 'Invalid local account email or password.';
+    }
+    return message ?? 'Login failed';
+  }
 
   async function onSubmit() {
     errorMsg = '';
     loading = true;
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    let payload: Record<string, string>;
 
-    if (authError || !authData.session?.access_token) {
-      loading = false;
-      errorMsg = authError?.message ?? 'Supabase sign-in failed';
-      return;
+    if (authMode === 'supabase') {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError || !authData.session?.access_token) {
+        loading = false;
+        errorMsg = mapAuthError(authError?.message);
+        return;
+      }
+
+      payload = { accessToken: authData.session.access_token };
+    } else {
+      payload = { email: email.trim().toLowerCase(), password };
     }
 
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: authData.session.access_token })
+      body: JSON.stringify(payload)
     });
 
     const body = await res.json();
     loading = false;
 
     if (!res.ok) {
-      errorMsg = body.error?.message ?? 'Login failed';
+      errorMsg = mapAppError(body?.error?.code, body?.error?.message);
       return;
     }
 
@@ -50,6 +86,13 @@
         <span class="text-sm text-slate-300">Email</span>
         <input bind:value={email} class="w-full mt-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2" type="email" required />
       </label>
+      <label class="block">
+        <span class="text-sm text-slate-300">Login mode</span>
+        <select bind:value={authMode} class="w-full mt-1 rounded-lg bg-slate-700 border border-slate-600 px-3 py-2">
+          <option value="supabase">Supabase account</option>
+          <option value="local">Local app account</option>
+        </select>
+      </label>
 
       <label class="block">
         <span class="text-sm text-slate-300">Password</span>
@@ -63,6 +106,10 @@
       {#if errorMsg}
         <p class="text-red-300 text-sm">{errorMsg}</p>
       {/if}
+
+      <p class="text-xs text-slate-400">
+        Local mode: admin-created account in Users with password. Supabase mode: Supabase identity + role mapping.
+      </p>
     </div>
   </div>
 </div>

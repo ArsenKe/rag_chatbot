@@ -3,17 +3,25 @@ import { z } from 'zod';
 export const roleSchema = z.enum(['admin', 'manager', 'driver']);
 
 export const loginSchema = z.object({
-  accessToken: z.string().trim().min(10)
+  accessToken: z.string().trim().min(10).optional(),
+  email: z.string().trim().email().transform((value: string) => value.toLowerCase()).optional(),
+  password: z.string().min(6).optional()
+}).refine((value) => Boolean(value.accessToken) || Boolean(value.email && value.password), {
+  message: 'Either accessToken or email+password is required'
 });
 
 export const appUserCreateSchema = z.object({
   email: z.string().trim().email().transform((value: string) => value.toLowerCase()),
-  role: roleSchema
+  role: roleSchema,
+  password: z.string().min(8).optional(),
+  driverId: z.coerce.bigint().optional().nullable()
 });
 
 export const appUserUpdateSchema = z.object({
   email: z.string().trim().email().transform((value: string) => value.toLowerCase()),
-  role: roleSchema
+  role: roleSchema,
+  password: z.string().min(8).optional(),
+  driverId: z.coerce.bigint().optional().nullable()
 });
 
 export const appUserInviteSchema = z.object({

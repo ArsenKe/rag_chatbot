@@ -36,6 +36,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   role      Role
+  passwordHash String?
   driverId  BigInt?
   createdAt DateTime @default(now())
 }

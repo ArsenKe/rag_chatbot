@@ -6,7 +6,7 @@
   const roleTitle: Record<string, string> = {
     admin: 'Admin Console',
     manager: 'Manager Console',
-    driver: 'Driver Console'
+    driver: 'Driver Analytics'
   };
 
   async function logout() {

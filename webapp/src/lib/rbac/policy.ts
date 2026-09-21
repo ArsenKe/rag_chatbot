@@ -3,7 +3,7 @@ export type AppRole = 'admin' | 'manager' | 'driver';
 export const HOME_BY_ROLE: Record<AppRole, string> = {
   admin: '/dashboard',
   manager: '/bookings',
-  driver: '/calendar'
+  driver: '/tours'
 };
 
 export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>> = {
@@ -30,16 +30,16 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
     { href: '/reports', label: 'Reports' }
   ],
   driver: [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/calendar', label: 'My Schedule' },
-    { href: '/tours', label: 'City Tour' }
+    { href: '/tours', label: 'City Tour' },
+    { href: '/dashboard', label: 'Analytics' },
+    { href: '/calendar', label: 'My Schedule' }
   ]
 };
 
 const ALLOWED_PREFIXES: Record<AppRole, string[]> = {
   admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/reports'],
   manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/reports'],
-  driver: ['/dashboard', '/calendar', '/tours']
+  driver: ['/tours', '/dashboard', '/calendar']
 };
 
 export function canAccessAppPath(role: AppRole, pathname: string): boolean {

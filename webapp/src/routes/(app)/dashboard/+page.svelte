@@ -119,41 +119,76 @@
   }
 </script>
 
-<div class="grid md:grid-cols-3 gap-4 mb-6">
-  <div class="bg-white rounded-xl border p-4">
-    <p class="text-xs uppercase text-slate-500">Today Revenue</p>
-    <p class="text-2xl font-bold">EUR {data.metrics.todayRevenue.toFixed(2)}</p>
+{#if role === 'driver'}
+  <div class="mb-6 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500 p-4 text-white shadow-lg">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] text-sky-100">Driver analytics</p>
+        <h2 class="mt-2 text-2xl font-black">Your performance</h2>
+      </div>
+      <div class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase">Live</div>
+    </div>
   </div>
-  <div class="bg-white rounded-xl border p-4">
-    <p class="text-xs uppercase text-slate-500">Open Bookings</p>
-    <p class="text-2xl font-bold">{data.metrics.openBookings}</p>
+
+  <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Today</p>
+      <p class="mt-2 text-2xl font-black text-slate-900">€{data.earnings.day.toFixed(2)}</p>
+    </div>
+    <div class="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">This Week</p>
+      <p class="mt-2 text-2xl font-black text-slate-900">€{data.earnings.week.toFixed(2)}</p>
+    </div>
+    <div class="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">This Month</p>
+      <p class="mt-2 text-2xl font-black text-slate-900">€{data.earnings.month.toFixed(2)}</p>
+    </div>
+    <div class="rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">This Year</p>
+      <p class="mt-2 text-2xl font-black text-slate-900">€{data.earnings.year.toFixed(2)}</p>
+    </div>
   </div>
-  <div class="bg-white rounded-xl border p-4">
-    <p class="text-xs uppercase text-slate-500">Active Drivers</p>
-    <p class="text-2xl font-bold">{data.metrics.activeDrivers}</p>
+{:else}
+  <div class="mb-6 grid gap-4 md:grid-cols-3">
+    <div class="bg-white rounded-xl border p-4">
+      <p class="text-xs uppercase text-slate-500">Today Revenue</p>
+      <p class="text-2xl font-bold">EUR {data.metrics.todayRevenue.toFixed(2)}</p>
+    </div>
+    <div class="bg-white rounded-xl border p-4">
+      <p class="text-xs uppercase text-slate-500">Open Bookings</p>
+      <p class="text-2xl font-bold">{data.metrics.openBookings}</p>
+    </div>
+    <div class="bg-white rounded-xl border p-4">
+      <p class="text-xs uppercase text-slate-500">Active Drivers</p>
+      <p class="text-2xl font-bold">{data.metrics.activeDrivers}</p>
+    </div>
   </div>
-</div>
+{/if}
+
+{#if role === 'driver' && !hasDriverMapping}
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+    <h2 class="font-semibold text-amber-900">Driver Profile Link Required</h2>
+    <p class="text-sm text-amber-800 mt-1">
+      Your login works, but actions are limited until an admin links your account to a driver profile in Users.
+    </p>
+  </section>
+{/if}
 
 {#if role === 'driver'}
-  <section class="bg-white rounded-xl border p-5 mb-6">
-    <h2 class="font-semibold text-lg mb-3">My Earnings</h2>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="rounded-lg border bg-slate-50 p-3">
-        <p class="text-xs uppercase text-slate-500">Today</p>
-        <p class="text-xl font-semibold">EUR {data.earnings.day.toFixed(2)}</p>
-      </div>
-      <div class="rounded-lg border bg-slate-50 p-3">
-        <p class="text-xs uppercase text-slate-500">This Week</p>
-        <p class="text-xl font-semibold">EUR {data.earnings.week.toFixed(2)}</p>
-      </div>
-      <div class="rounded-lg border bg-slate-50 p-3">
-        <p class="text-xs uppercase text-slate-500">This Month</p>
-        <p class="text-xl font-semibold">EUR {data.earnings.month.toFixed(2)}</p>
-      </div>
-      <div class="rounded-lg border bg-slate-50 p-3">
-        <p class="text-xs uppercase text-slate-500">This Year</p>
-        <p class="text-xl font-semibold">EUR {data.earnings.year.toFixed(2)}</p>
-      </div>
+  <section class="mb-6 rounded-2xl border bg-white p-4 shadow-sm">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-lg font-bold text-slate-900">Quick actions</h2>
+      <span class="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-700">Drive</span>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <a href="/tours" class="rounded-2xl bg-sky-500 p-4 text-white shadow-sm transition hover:bg-sky-600">
+        <div class="text-xs uppercase tracking-wide text-sky-100">Start now</div>
+        <div class="mt-2 text-2xl font-black">City Tour</div>
+      </a>
+      <a href="/calendar" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-800 transition hover:border-sky-300 hover:bg-sky-50">
+        <div class="text-xs uppercase tracking-wide text-slate-500">Review</div>
+        <div class="mt-2 text-2xl font-black">Schedule</div>
+      </a>
     </div>
   </section>
 {/if}

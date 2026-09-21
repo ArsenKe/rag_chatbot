@@ -32,6 +32,18 @@ enum BookingStatus {
   cancelled
 }
 
+enum TourTier {
+  silver
+  gold
+  platinum
+}
+
+enum TourStatus {
+  in_progress
+  completed
+  cancelled
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -50,6 +62,37 @@ model Driver {
   status        DriverStatus         @default(active)
   availabilities DriverAvailability[]
   trips         Trip[]
+  cityTours      CityTour[]
+}
+
+// Ordered stop in the walking/driving city-tour audio guide, tier-agnostic
+model TourStop {
+  id       BigInt  @id @default(autoincrement())
+  name     String
+  order    Int
+  imageUrl String?
+  audioUrl String?
+
+  @@index([order])
+}
+
+// One tour session run by a driver: tier sets duration/base price, price scales with guests
+model CityTour {
+  id                BigInt     @id @default(autoincrement())
+  driverId          BigInt
+  tier              TourTier
+  guestCount        Int
+  language          String
+  durationMinutes   Int
+  priceAmount       Decimal    @db.Decimal(12, 2)
+  commissionAmount  Decimal    @db.Decimal(12, 2)
+  status            TourStatus @default(in_progress)
+  startedAt         DateTime   @default(now())
+  endedAt           DateTime?
+
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@index([driverId, startedAt])
 }
 
 model Car {

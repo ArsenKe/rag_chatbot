@@ -1,6 +1,6 @@
 export type TourTier = 'silver' | 'gold' | 'platinum';
 
-// Base duration/price per tier; price scales up with extra guests beyond the first two
+// Single source of truth for business rules. Update this file whenever tour pricing or timing changes.
 export const TIER_CONFIG: Record<TourTier, { durationMinutes: number; basePrice: number; extraGuestFee: number }> = {
   silver: { durationMinutes: 45, basePrice: 60, extraGuestFee: 8 },
   gold: { durationMinutes: 75, basePrice: 90, extraGuestFee: 10 },

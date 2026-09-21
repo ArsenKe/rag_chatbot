@@ -81,6 +81,10 @@ function toJsonSafe<T>(value: T): T {
     return value.toISOString() as T;
   }
 
+  if (value instanceof Prisma.Decimal) {
+    return value.toString() as T;
+  }
+
   if (Array.isArray(value)) {
     return value.map((item) => toJsonSafe(item)) as T;
   }

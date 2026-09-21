@@ -27,6 +27,11 @@
   let summary: { price: number; commission: number } | null = null;
   let ending = false;
 
+  function safeMoney(value: unknown): number {
+    const asNumber = Number(value);
+    return Number.isFinite(asNumber) ? asNumber : 0;
+  }
+
   async function loadStops() {
     loadingStops = true;
     const res = await fetch('/api/tour-stops');
@@ -88,8 +93,8 @@
     }
 
     summary = {
-      price: Number(payload.data.priceAmount),
-      commission: Number(payload.data.commissionAmount)
+      price: safeMoney(payload.data?.priceAmount),
+      commission: safeMoney(payload.data?.commissionAmount)
     };
 
     activeTourId = null;

@@ -6,7 +6,7 @@
   const roleTitle: Record<string, string> = {
     admin: 'Admin Console',
     manager: 'Manager Console',
-    driver: 'Driver Analytics'
+    driver: ''
   };
 
   async function logout() {
@@ -19,7 +19,7 @@
   <header class="border-b bg-white sticky top-0 z-20">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div>
-        <h1 class="font-bold text-lg">Royal E-Cars {roleTitle[data.user?.role] ?? 'Operations'}</h1>
+        <h1 class="font-bold text-lg">Royal E-Cars{roleTitle[data.user?.role] ? ` ${roleTitle[data.user?.role]}` : ''}</h1>
         <p class="text-xs text-slate-500">{data.user?.email} · {data.user?.role}</p>
       </div>
       <nav class="flex gap-3 text-sm items-center flex-wrap justify-end">

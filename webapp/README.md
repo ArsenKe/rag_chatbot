@@ -64,6 +64,43 @@ npm run db:push
 npm run dev
 ```
 
+## Google Calendar Integration (Drivers Only)
+
+### Setup
+
+1. Create a Google Cloud project at https://console.cloud.google.com/
+2. Enable the Google Calendar API
+3. Create OAuth 2.0 credentials (Desktop application)
+4. Add these environment variables to your `.env`:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:5173/api/google-calendar/callback
+```
+
+For production on Railway:
+```env
+GOOGLE_OAUTH_REDIRECT_URI=https://your-railway-domain.up.railway.app/api/google-calendar/callback
+```
+
+### Features
+
+- Drivers can connect their Google Calendar
+- Events from Google Calendar appear on the visual calendar
+- Sync button to manually refresh calendar events
+- Disconnect button to remove Google Calendar connection
+- Calendar view in month or week mode
+- Color-coded events (teal = app events, blue = Google Calendar)
+
+### How It Works
+
+1. Driver clicks "Connect Google Calendar"
+2. Redirected to Google OAuth login
+3. Authorization tokens stored securely in database
+4. Driver can sync events or view them automatically on the calendar page
+
+
 ## Railway Deployment (Recommended)
 
 Deploy as two Railway services plus one PostgreSQL add-on:

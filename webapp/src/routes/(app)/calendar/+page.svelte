@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import ScheduleCalendar from '$lib/components/calendar/ScheduleCalendar.svelte';
+  import VisualCalendar from '$lib/components/calendar/VisualCalendar.svelte';
   import { supabase } from '$lib/supabase/client';
 
   type BookingRow = {
@@ -22,23 +23,30 @@
     isAvailable: boolean;
   };
 
-  let events: Array<{
-    bookingId: string;
+  type CalendarEvent = {
+    bookingId?: string;
     title: string;
     start: string;
     end: string;
-    status: string;
-    customerName: string;
-    pickup: string;
-    dropoff: string;
-    driver: string;
-    car: string;
-  }> = [];
+    status?: string;
+    customerName?: string;
+    pickup?: string;
+    dropoff?: string;
+    driver?: string;
+    car?: string;
+    source?: 'app' | 'google';
+  };
+
+  let events: CalendarEvent[] = [];
+  let googleEvents: CalendarEvent[] = [];
   let blockedSlots: BlockedSlot[] = [];
   let loading = true;
+  let loadingGoogle = false;
   let savingBlock = false;
   let errorMsg = '';
+  let successMsg = '';
   let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  let googleConnected = false;
 
   let blockForm = {
     shiftStart: '',
@@ -47,6 +55,7 @@
 
   $: isDriver = $page.data.user?.role === 'driver';
   $: hasDriverMapping = Boolean($page.data.user?.driverId);
+  $: allEvents = [...events, ...googleEvents];
 
   function formatCalendarDate(value: string) {
     return new Date(value).toISOString().slice(0, 16).replace('T', ' ');
@@ -108,6 +117,55 @@
     }
 
     await loadCalendar();
+  }
+
+  async function connectGoogleCalendar() {
+    const authUrl = await fetch('/api/google-calendar/auth').then(r => r.json());
+    if (authUrl.data?.url) {
+      window.location.href = authUrl.data.url;
+    }
+  }
+
+  async function syncGoogleCalendar() {
+    loadingGoogle = true;
+    errorMsg = '';
+    successMsg = '';
+
+    const res = await fetch('/api/google-calendar/sync');
+    const payload = await res.json();
+    loadingGoogle = false;
+
+    if (!res.ok) {
+      errorMsg = payload.error?.message ?? 'Failed to sync Google Calendar';
+      return;
+    }
+
+    googleEvents = (payload.data ?? []).map((event: any) => ({
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      source: 'google' as const
+    }));
+
+    successMsg = 'Google Calendar synced successfully!';
+    setTimeout(() => { successMsg = ''; }, 3000);
+  }
+
+  async function disconnectGoogleCalendar() {
+    if (!confirm('Disconnect Google Calendar?')) return;
+
+    const res = await fetch('/api/google-calendar/sync', { method: 'DELETE' });
+    const payload = await res.json();
+
+    if (!res.ok) {
+      errorMsg = payload.error?.message ?? 'Failed to disconnect';
+      return;
+    }
+
+    googleConnected = false;
+    googleEvents = [];
+    successMsg = 'Google Calendar disconnected';
+    setTimeout(() => { successMsg = ''; }, 3000);
   }
 
   async function loadCalendar() {
@@ -235,9 +293,63 @@
 {#if loading}
   <p class="text-sm text-slate-500">Loading assigned jobs...</p>
 {:else}
-  <ScheduleCalendar
-    {events}
-    onAccept={(bookingId) => answerAssignment(bookingId, 'confirmed')}
-    onReject={(bookingId) => answerAssignment(bookingId, 'cancelled')}
-  />
+  <!-- Visual Calendar -->
+  <div class="mb-6">
+    <VisualCalendar events={allEvents} />
+  </div>
+
+  {#if isDriver}
+    <!-- Google Calendar Integration -->
+    <div class="mb-6 rounded-xl border bg-white p-4 shadow-sm">
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold">Google Calendar Integration</h3>
+          <p class="text-xs text-slate-500 mt-1">Sync your Google Calendar events to see all appointments in one place</p>
+        </div>
+        {#if googleConnected}
+          <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Connected</span>
+        {/if}
+      </div>
+
+      {#if successMsg}
+        <p class="mb-3 rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-700">{successMsg}</p>
+      {/if}
+
+      <div class="flex gap-2">
+        {#if googleConnected}
+          <button
+            class="flex-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+            on:click={syncGoogleCalendar}
+            disabled={loadingGoogle}
+          >
+            {loadingGoogle ? 'Syncing...' : '🔄 Sync Calendar'}
+          </button>
+          <button
+            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+            on:click={disconnectGoogleCalendar}
+          >
+            Disconnect
+          </button>
+        {:else}
+          <button
+            class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            on:click={connectGoogleCalendar}
+          >
+            🔗 Connect Google Calendar
+          </button>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  <!-- List View -->
+  <div class="rounded-xl border bg-white p-4 shadow-sm">
+    <h3 class="mb-3 font-semibold">Assigned Jobs</h3>
+    <ScheduleCalendar
+      events={events}
+      onAccept={(bookingId) => answerAssignment(bookingId, 'confirmed')}
+      onReject={(bookingId) => answerAssignment(bookingId, 'cancelled')}
+    />
+    />
+  </div>
 {/if}

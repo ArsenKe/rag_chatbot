@@ -29,9 +29,14 @@
     "vite": "^5.4.8"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.21",
+    "@fullcalendar/daygrid": "^6.1.21",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/timegrid": "^6.1.21",
     "@prisma/client": "^5.20.0",
     "@supabase/supabase-js": "^2.45.4",
     "chart.js": "^4.5.1",
+    "googleapis": "^181.0.0",
     "jose": "^5.9.3",
     "zod": "^3.23.8"
   }

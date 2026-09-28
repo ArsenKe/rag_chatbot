@@ -1,6 +1,10 @@
 import { prisma } from '$lib/server/db/client';
+import { getFromCache, setInCache, invalidateCache } from '$lib/server/cache/redis';
 
 export type TourTier = 'silver' | 'gold' | 'platinum';
+
+const CACHE_KEY_PRICING = 'pricing-configs';
+const CACHE_TTL = 3600; // 1 hour
 
 export async function getPricingConfig(tier: TourTier) {
   const configs = await prisma.tourPricingConfig.findMany({
@@ -39,9 +43,19 @@ export async function calculateTourPriceFromDB(tier: TourTier, guestCount: numbe
 }
 
 export async function getAllPricingConfigs() {
-  return await prisma.tourPricingConfig.findMany({
+  // Try cache first
+  const cached = await getFromCache<any[]>(CACHE_KEY_PRICING);
+  if (cached) {
+    return cached;
+  }
+
+  const configs = await prisma.tourPricingConfig.findMany({
     orderBy: [{ tier: 'asc' }, { minGuests: 'asc' }]
   });
+
+  // Cache for 1 hour
+  await setInCache(CACHE_KEY_PRICING, configs, CACHE_TTL);
+  return configs;
 }
 
 export async function createPricingConfig(data: {
@@ -53,7 +67,7 @@ export async function createPricingConfig(data: {
   durationMinutes: number;
   driverCommissionPercentage: number;
 }) {
-  return await prisma.tourPricingConfig.create({
+  const result = await prisma.tourPricingConfig.create({
     data: {
       tier: data.tier,
       minGuests: data.minGuests,
@@ -64,6 +78,10 @@ export async function createPricingConfig(data: {
       driverCommissionPercentage: data.driverCommissionPercentage
     }
   });
+
+  // Invalidate cache
+  await invalidateCache(CACHE_KEY_PRICING);
+  return result;
 }
 
 export async function updatePricingConfig(
@@ -77,14 +95,22 @@ export async function updatePricingConfig(
     driverCommissionPercentage: number;
   }>
 ) {
-  return await prisma.tourPricingConfig.update({
+  const result = await prisma.tourPricingConfig.update({
     where: { id },
     data
   });
+
+  // Invalidate cache
+  await invalidateCache(CACHE_KEY_PRICING);
+  return result;
 }
 
 export async function deletePricingConfig(id: bigint) {
-  return await prisma.tourPricingConfig.delete({
+  const result = await prisma.tourPricingConfig.delete({
     where: { id }
   });
+
+  // Invalidate cache
+  await invalidateCache(CACHE_KEY_PRICING);
+  return result;
 }

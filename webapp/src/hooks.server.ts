@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/client';
 import { getSupabaseUserFromAccessToken } from '$lib/server/auth/supabase';
+import { checkRateLimit, createRateLimitError } from '$lib/server/middleware/ratelimit';
 
 export const handle: Handle = async ({ event, resolve }) => {
   event.locals.user = null;
@@ -26,6 +27,14 @@ export const handle: Handle = async ({ event, resolve }) => {
         };
       }
     }
+  }
+
+  // Apply rate limiting
+  const limiterType = event.url.pathname.includes('/auth') ? 'auth' : 'api';
+  const allowed = await checkRateLimit(event, limiterType);
+
+  if (!allowed) {
+    return createRateLimitError(limiterType);
   }
 
   return resolve(event);

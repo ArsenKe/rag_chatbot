@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [sveltekit()],
   build: {
     rollupOptions: {
-      external: ['@upstash/ratelimit', '@upstash/redis']
+      external: ['@upstash/ratelimit', '@upstash/redis', 'redis']
     }
   },
   ssr: {

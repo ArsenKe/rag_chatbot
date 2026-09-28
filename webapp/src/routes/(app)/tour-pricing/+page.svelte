@@ -154,8 +154,8 @@
 
       <div class="grid md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="block text-sm font-medium mb-1">Tour Tier</label>
-          <select bind:value={formData.tier} class="w-full border rounded-lg px-3 py-2">
+          <label for="tier" class="block text-sm font-medium mb-1">Tour Tier</label>
+          <select id="tier" bind:value={formData.tier} class="w-full border rounded-lg px-3 py-2">
             <option value="silver">Silver</option>
             <option value="gold">Gold</option>
             <option value="platinum">Platinum</option>
@@ -163,36 +163,36 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Min Guests</label>
-          <input type="number" min="1" bind:value={formData.minGuests} class="w-full border rounded-lg px-3 py-2" />
+          <label for="minGuests" class="block text-sm font-medium mb-1">Min Guests</label>
+          <input id="minGuests" type="number" min="1" bind:value={formData.minGuests} class="w-full border rounded-lg px-3 py-2" />
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Max Guests</label>
-          <input type="number" min="1" bind:value={formData.maxGuests} class="w-full border rounded-lg px-3 py-2" />
+          <label for="maxGuests" class="block text-sm font-medium mb-1">Max Guests</label>
+          <input id="maxGuests" type="number" min="1" bind:value={formData.maxGuests} class="w-full border rounded-lg px-3 py-2" />
         </div>
       </div>
 
       <div class="grid md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label class="block text-sm font-medium mb-1">Base Price (€)</label>
-          <input type="number" step="0.01" min="0" bind:value={formData.basePricePerTour} class="w-full border rounded-lg px-3 py-2" />
+          <label for="basePrice" class="block text-sm font-medium mb-1">Base Price (€)</label>
+          <input id="basePrice" type="number" step="0.01" min="0" bind:value={formData.basePricePerTour} class="w-full border rounded-lg px-3 py-2" />
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Price per Additional Guest (€)</label>
-          <input type="number" step="0.01" min="0" bind:value={formData.pricePerAdditionalGuestBeyond} class="w-full border rounded-lg px-3 py-2" />
+          <label for="pricePerGuest" class="block text-sm font-medium mb-1">Price per Additional Guest (€)</label>
+          <input id="pricePerGuest" type="number" step="0.01" min="0" bind:value={formData.pricePerAdditionalGuestBeyond} class="w-full border rounded-lg px-3 py-2" />
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Duration (minutes)</label>
-          <input type="number" min="15" step="15" bind:value={formData.durationMinutes} class="w-full border rounded-lg px-3 py-2" />
+          <label for="duration" class="block text-sm font-medium mb-1">Duration (minutes)</label>
+          <input id="duration" type="number" min="15" step="15" bind:value={formData.durationMinutes} class="w-full border rounded-lg px-3 py-2" />
         </div>
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">Driver Commission (%)</label>
-        <input type="number" step="0.01" min="0" max="100" bind:value={formData.driverCommissionPercentage} class="w-full border rounded-lg px-3 py-2" />
+        <label for="commission" class="block text-sm font-medium mb-1">Driver Commission (%)</label>
+        <input id="commission" type="number" step="0.01" min="0" max="100" bind:value={formData.driverCommissionPercentage} class="w-full border rounded-lg px-3 py-2" />
       </div>
 
       <div class="flex gap-2">

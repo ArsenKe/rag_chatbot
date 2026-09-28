@@ -81,6 +81,7 @@ model TourStop {
 }
 
 // Admin-configured pricing for city tours by tier and guest count
+// Multiple price configurations allowed per tier (e.g., different guest ranges)
 model TourPricingConfig {
   id                              BigInt   @id @default(autoincrement())
   tier                            TourTier
@@ -93,8 +94,8 @@ model TourPricingConfig {
   createdAt                       DateTime @default(now())
   updatedAt                       DateTime @updatedAt
 
-  @@unique([tier, minGuests, maxGuests])
   @@index([tier])
+  @@index([tier, minGuests, maxGuests])
 }
 
 // One tour session run by a driver: tier sets duration/base price, price scales with guests

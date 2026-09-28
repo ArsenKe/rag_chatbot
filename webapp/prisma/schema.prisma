@@ -80,6 +80,23 @@ model TourStop {
   @@index([order])
 }
 
+// Admin-configured pricing for city tours by tier and guest count
+model TourPricingConfig {
+  id                              BigInt   @id @default(autoincrement())
+  tier                            TourTier
+  minGuests                       Int      @default(1)
+  maxGuests                       Int      @default(20)
+  basePricePerTour                Decimal  @db.Decimal(12, 2)
+  pricePerAdditionalGuestBeyond   Decimal  @db.Decimal(12, 2)  // price per guest after minGuests
+  durationMinutes                 Int
+  driverCommissionPercentage      Decimal  @db.Decimal(5, 2)   // e.g. 10.00 for 10%
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+
+  @@unique([tier, minGuests, maxGuests])
+  @@index([tier])
+}
+
 // One tour session run by a driver: tier sets duration/base price, price scales with guests
 model CityTour {
   id                BigInt     @id @default(autoincrement())

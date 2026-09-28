@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
 import { tourStartSchema } from '$lib/server/tours/schemas';
-import { calculateTourPrice } from '$lib/server/tours/pricing';
+import { calculateTourPriceFromDB } from '$lib/server/tours/pricing-config';
 import { failure, success, toErrorResponse } from '$lib/server/api/responses';
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -35,7 +35,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     const body = tourStartSchema.parse(await request.json());
-    const { durationMinutes, price, commission } = calculateTourPrice(body.tier, body.guestCount);
+    
+    let pricing;
+    try {
+      pricing = await calculateTourPriceFromDB(body.tier, body.guestCount);
+    } catch (err) {
+      return failure(400, 'pricing_config_missing', `Pricing not configured for tier ${body.tier} with ${body.guestCount} guests`);
+    }
 
     const created = await prisma.cityTour.create({
       data: {
@@ -43,9 +49,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         tier: body.tier,
         guestCount: body.guestCount,
         language: body.language,
-        durationMinutes,
-        priceAmount: price.toFixed(2),
-        commissionAmount: commission.toFixed(2),
+        durationMinutes: pricing.durationMinutes,
+        priceAmount: pricing.price.toFixed(2),
+        commissionAmount: pricing.commission.toFixed(2),
         status: 'in_progress'
       }
     });

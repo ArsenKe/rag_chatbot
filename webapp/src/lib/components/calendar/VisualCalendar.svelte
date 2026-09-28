@@ -26,7 +26,7 @@
   function getEventsForDate(date: Date): typeof events {
     const dateKey = formatDateKey(date);
     return events.filter((e) => {
-      const eventDateKey = e.start.split('T')[0];
+      const eventDateKey = e.start.split('T')[0] || e.start.split(' ')[0];
       return eventDateKey === dateKey;
     });
   }

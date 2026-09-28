@@ -17,6 +17,7 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
     { href: '/locations', label: 'Locations' },
     { href: '/bookings', label: 'Bookings' },
     { href: '/calendar', label: 'Calendar' },
+    { href: '/tour-pricing', label: 'Tour Pricing' },
     { href: '/reports', label: 'Reports' }
   ],
   manager: [
@@ -27,6 +28,7 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
     { href: '/locations', label: 'Locations' },
     { href: '/drivers', label: 'Drivers' },
     { href: '/cars', label: 'Cars' },
+    { href: '/tour-pricing', label: 'Tour Pricing' },
     { href: '/reports', label: 'Reports' }
   ],
   driver: [
@@ -37,8 +39,8 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
 };
 
 const ALLOWED_PREFIXES: Record<AppRole, string[]> = {
-  admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/reports'],
-  manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/reports'],
+  admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports'],
+  manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports'],
   driver: ['/tours', '/dashboard', '/calendar']
 };
 

@@ -2,7 +2,11 @@ import adapter from '@sveltejs/adapter-node';
 
 const config = {
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      out: 'build',
+      precompress: false,
+      envPrefix: ''
+    }),
     alias: {
       $lib: 'src/lib'
     }

@@ -6,6 +6,22 @@ import {
   deletePricingConfig
 } from '$lib/server/tours/pricing-config';
 
+// Helper to convert BigInt to string for JSON serialization
+function serializeConfig(config: any) {
+  return {
+    id: String(config.id),
+    tier: config.tier,
+    minGuests: config.minGuests,
+    maxGuests: config.maxGuests,
+    basePricePerTour: Number(config.basePricePerTour),
+    pricePerAdditionalGuestBeyond: Number(config.pricePerAdditionalGuestBeyond),
+    durationMinutes: config.durationMinutes,
+    driverCommissionPercentage: Number(config.driverCommissionPercentage),
+    createdAt: config.createdAt,
+    updatedAt: config.updatedAt
+  };
+}
+
 export async function GET({ locals }) {
   if (!locals.user) {
     return json({ error: { message: 'Unauthorized' } }, { status: 401 });
@@ -17,7 +33,7 @@ export async function GET({ locals }) {
 
   try {
     const configs = await getAllPricingConfigs();
-    return json({ data: configs });
+    return json({ data: configs.map(serializeConfig) });
   } catch (err) {
     console.error('Error fetching pricing configs:', err);
     return json({ error: { message: 'Failed to fetch pricing configurations' } }, { status: 500 });
@@ -66,7 +82,7 @@ export async function POST({ request, locals }) {
       driverCommissionPercentage: data.driverCommissionPercentage || 30
     });
 
-    return json({ data: config }, { status: 201 });
+    return json({ data: serializeConfig(config) }, { status: 201 });
   } catch (err) {
     console.error('Error creating pricing config:', err);
     return json({ error: { message: 'Failed to create pricing configuration' } }, { status: 500 });
@@ -91,7 +107,7 @@ export async function PUT({ request, locals, url }) {
     const data = await request.json();
     const config = await updatePricingConfig(BigInt(id), data);
 
-    return json({ data: config });
+    return json({ data: serializeConfig(config) });
   } catch (err) {
     console.error('Error updating pricing config:', err);
     return json({ error: { message: 'Failed to update pricing configuration' } }, { status: 500 });

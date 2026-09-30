@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:seed": "node --loader ts-node/esm prisma/seed.ts"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.2.8",

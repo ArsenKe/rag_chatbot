@@ -3,6 +3,7 @@ import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
 import { bookingSchema } from '$lib/server/api/schemas';
 import { success, failure, toErrorResponse } from '$lib/server/api/responses';
+import { calculateAndUpdateTripPayout } from '$lib/server/payouts/payout-service';
 
 function buildDriverNotes(body: {
   notes?: string;
@@ -196,7 +197,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         const durationMinutes = Math.max(1, Math.round((requestedEnd.getTime() - requestedStart.getTime()) / 60000));
 
-        await tx.trip.create({
+        const trip = await tx.trip.create({
           data: {
             bookingId: booking.id,
             driverId,
@@ -233,6 +234,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
           }
         });
       });
+
+      // Calculate payout after trip creation (non-blocking)
+      if (created.trip?.id) {
+        calculateAndUpdateTripPayout(created.trip.id, 20).catch(err => {
+          console.warn('Failed to calculate trip payout:', err);
+        });
+      }
 
       return success(created, { status: 201 });
     }

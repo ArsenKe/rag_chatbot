@@ -1,10 +1,33 @@
 import { prisma } from '$lib/server/db/client';
 import { getFromCache, setInCache, invalidateCache } from '$lib/server/cache/redis';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export type TourTier = 'silver' | 'gold' | 'platinum';
 
 const CACHE_KEY_PRICING = 'pricing-configs';
 const CACHE_TTL = 3600; // 1 hour
+
+// Helper to convert BigInt and Decimal to JSON-serializable format
+function serializePricingConfigs(configs: any[]) {
+  return configs.map(config => ({
+    ...config,
+    id: config.id.toString(),
+    basePricePerTour: config.basePricePerTour.toString(),
+    pricePerAdditionalGuestBeyond: config.pricePerAdditionalGuestBeyond.toString(),
+    driverCommissionPercentage: config.driverCommissionPercentage.toString()
+  }));
+}
+
+// Helper to convert back from serialized format
+function deserializePricingConfigs(configs: any[]) {
+  return configs.map(config => ({
+    ...config,
+    id: BigInt(config.id),
+    basePricePerTour: new Decimal(config.basePricePerTour),
+    pricePerAdditionalGuestBeyond: new Decimal(config.pricePerAdditionalGuestBeyond),
+    driverCommissionPercentage: new Decimal(config.driverCommissionPercentage)
+  }));
+}
 
 export async function getPricingConfig(tier: TourTier) {
   const configs = await prisma.tourPricingConfig.findMany({
@@ -46,15 +69,17 @@ export async function getAllPricingConfigs() {
   // Try cache first
   const cached = await getFromCache<any[]>(CACHE_KEY_PRICING);
   if (cached) {
-    return cached;
+    return deserializePricingConfigs(cached);
   }
 
   const configs = await prisma.tourPricingConfig.findMany({
     orderBy: [{ tier: 'asc' }, { minGuests: 'asc' }]
   });
 
-  // Cache for 1 hour
-  await setInCache(CACHE_KEY_PRICING, configs, CACHE_TTL);
+  // Serialize BigInt and Decimal before caching
+  const serialized = serializePricingConfigs(configs);
+  await setInCache(CACHE_KEY_PRICING, serialized, CACHE_TTL);
+  
   return configs;
 }
 

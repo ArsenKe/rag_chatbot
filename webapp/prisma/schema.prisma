@@ -173,7 +173,7 @@ model Customer {
   address          String?
   driverLicense    String?
   registrationDate DateTime?
-  userId           String?
+  userId           String? @unique
   bookings         Booking[]
   trips            Trip[]
   invoices         Invoice[]

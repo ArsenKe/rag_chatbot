@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireRole } from '$lib/server/auth/jwt';
+import { requireRole } from '$lib/server/rbac/roles';
 import { getTopEarners } from '$lib/server/payouts/payout-service';
 
 /**

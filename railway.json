@@ -8,7 +8,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "node build/index.js",
+    "startCommand": "node build",
     "restartPolicyMaxRetries": 5,
     "restartPolicyWindowMs": 60000,
     "healthcheckPath": "/",

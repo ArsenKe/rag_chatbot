@@ -79,6 +79,7 @@ model User {
   customerId BigInt?
   createdAt DateTime @default(now())
   notifications Notification[]
+  customer  Customer?
 }
 
 model Driver {

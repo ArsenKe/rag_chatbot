@@ -40,11 +40,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         ...(statusFilter && { status: statusFilter })
       },
       include: {
-        driver: {
-          include: {
-            user: true
-          }
-        },
+        driver: true,
         car: true,
         pickupLocation: true,
         dropoffLocation: true,
@@ -82,8 +78,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     },
     driver: {
       id: trip.driver.id.toString(),
-      name: trip.driver.user?.name ?? 'Unknown',
-      phone: trip.driver.user?.phone ?? null,
+      name: trip.driver.name ?? 'Unknown',
+      phone: trip.driver.phone ?? null,
       rating: trip.driver.rating?.toString() ?? null
     },
     vehicle: {

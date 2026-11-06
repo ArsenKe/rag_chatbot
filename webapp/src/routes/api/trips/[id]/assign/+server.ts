@@ -28,8 +28,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
     // Verify driver exists and is available
     const driver = await prisma.driver.findUnique({
-      where: { id: driverId },
-      include: { user: true }
+      where: { id: driverId }
     });
 
     if (!driver) {
@@ -40,6 +39,11 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       throw error(400, 'Driver is suspended');
     }
 
+    // Get the user associated with this driver
+    const driverUser = await prisma.user.findFirst({
+      where: { driverId: driverId }
+    });
+
     // Update trip with driver assignment
     const updatedTrip = await prisma.trip.update({
       where: { id: tripId },
@@ -48,24 +52,24 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         status: 'assigned'
       },
       include: {
-        driver: {
-          include: { user: true }
-        },
+        driver: true,
         customer: true
       }
     });
 
     // Create notification for driver
     try {
-      await prisma.notification.create({
-        data: {
-          userId: driver.user?.id ?? '',
-          type: 'trip_assigned',
-          title: 'New Trip Assigned',
-          message: `You have been assigned a trip to ${trip.pickupLocationId}`,
-          isRead: false
-        }
-      });
+      if (driverUser) {
+        await prisma.notification.create({
+          data: {
+            userId: driverUser.id,
+            type: 'trip_assigned',
+            title: 'New Trip Assigned',
+            message: `You have been assigned a trip to ${trip.pickupLocationId}`,
+            isRead: false
+          }
+        });
+      }
     } catch (notifErr) {
       console.error('Error creating notification:', notifErr);
       // Don't fail the assignment if notification fails
@@ -77,7 +81,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         id: updatedTrip.id.toString(),
         status: updatedTrip.status,
         driverId: updatedTrip.driverId.toString(),
-        driverName: updatedTrip.driver?.user?.name ?? 'Unknown'
+        driverName: updatedTrip.driver?.name ?? 'Unknown'
       }
     });
   } catch (err) {

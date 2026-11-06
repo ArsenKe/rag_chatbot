@@ -105,11 +105,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
             customer: true
           }
         },
-        driver: {
-          include: {
-            user: true
-          }
-        },
+        driver: true,
         assignedCar: true
       },
       orderBy: {

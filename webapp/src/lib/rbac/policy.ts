@@ -9,6 +9,7 @@ export const HOME_BY_ROLE: Record<AppRole, string> = {
 export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>> = {
   admin: [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/revenue', label: 'Revenue' },
     { href: '/users', label: 'Users' },
     { href: '/knowledge', label: 'Knowledge' },
     { href: '/drivers', label: 'Drivers' },
@@ -22,6 +23,7 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
   ],
   manager: [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/revenue', label: 'Revenue' },
     { href: '/bookings', label: 'Bookings' },
     { href: '/calendar', label: 'Calendar' },
     { href: '/customers', label: 'Customers' },
@@ -40,8 +42,8 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
 };
 
 const ALLOWED_PREFIXES: Record<AppRole, string[]> = {
-  admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
-  manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  admin: ['/dashboard', '/revenue', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  manager: ['/dashboard', '/revenue', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
   driver: ['/tours', '/earnings', '/dashboard', '/calendar', '/notifications']
 };
 

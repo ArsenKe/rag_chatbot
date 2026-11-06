@@ -112,7 +112,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
       endTime: trip.endTime?.toISOString() ?? null,
       customerName: trip.booking?.customer?.name ?? 'Unknown',
       customerPhone: trip.booking?.customer?.phone ?? null,
-      driverName: trip.driver?.user?.name ?? 'Unknown',
+      driverName: trip.driver?.name ?? 'Unknown',
       driverId: trip.driver?.id.toString() ?? null,
       vehicleInfo: trip.car ? `${trip.car.make} ${trip.car.model}` : null,
       totalAmount: trip.totalAmount?.toString() ?? '0',

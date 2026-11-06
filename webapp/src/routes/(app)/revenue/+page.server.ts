@@ -141,9 +141,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       _count: true,
       where: {
         status: 'completed',
-        carId: {
-          not: null
-        },
         startTime: {
           gte: startDate,
           lt: endDate

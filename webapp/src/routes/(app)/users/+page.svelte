@@ -1,269 +1,397 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
+  import type { PageData } from './$types';
 
-  export let data: { currentUserId: string | null };
+  export let data: PageData;
 
-  type AppUser = {
-    id: string;
-    email: string;
-    role: 'admin' | 'manager' | 'driver';
-    driverId: string | null;
-    createdAt: string;
-  };
+  let searchInput = '';
+  let selectedRole = data.filters.role;
+  let showEditModal = false;
+  let showLinkModal = false;
+  let selectedUser: any = null;
+  let editData = { role: '' };
+  let linkData = { profileType: '', profileId: '' };
 
-  let users: AppUser[] = [];
-  let drivers: Array<{ id: string; name: string }> = [];
-  let loading = true;
-  let saving = false;
-  let inviting = false;
-  let deletingId: string | null = null;
-  let editingId: string | null = null;
-  let errorMsg = '';
+  const roleOptions = [
+    { label: 'All Roles', value: 'all' },
+    { label: 'Admin', value: 'admin' },
+    { label: 'Manager', value: 'manager' },
+    { label: 'Driver', value: 'driver' }
+  ];
 
-  let form: { email: string; role: AppUser['role']; driverId: string } = {
-    email: '',
-    role: 'manager',
-    driverId: ''
-  };
-
-  async function loadUsers() {
-    loading = true;
-    errorMsg = '';
-
-    const res = await fetch('/api/users');
-    const driversRes = await fetch('/api/drivers?status=active');
-    const payload = await res.json();
-    const driversPayload = await driversRes.json();
-
-    if (!res.ok || !driversRes.ok) {
-      errorMsg = payload.error?.message ?? driversPayload.error?.message ?? 'Failed to load users';
-      loading = false;
-      return;
-    }
-
-    users = (payload.data ?? []).map((user: any) => ({
-      ...user,
-      id: String(user.id),
-      driverId: user.driverId == null ? null : String(user.driverId)
-    }));
-
-    drivers = (driversPayload.data ?? []).map((driver: any) => ({
-      id: String(driver.id),
-      name: String(driver.name)
-    }));
-    loading = false;
+  function handleSearch() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('search', searchInput);
+    url.searchParams.delete('skip');
+    window.location.href = url.toString();
   }
 
-  async function save() {
-    saving = true;
-    errorMsg = '';
-
-    const url = editingId ? `/api/users/${editingId}` : '/api/users';
-    const method = editingId ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: form.email.trim().toLowerCase(),
-        role: form.role,
-        driverId: form.role === 'driver' && form.driverId ? form.driverId : null
-      })
-    });
-
-    const payload = await res.json();
-    saving = false;
-
-    if (!res.ok) {
-      errorMsg = payload.error?.message ?? 'Failed to save user';
-      return;
-    }
-
-    resetForm();
-    await loadUsers();
+  function handleRoleFilter(role: string) {
+    selectedRole = role;
+    const url = new URL(window.location.href);
+    url.searchParams.set('role', role);
+    url.searchParams.delete('skip');
+    window.location.href = url.toString();
   }
 
-  async function inviteAndSave() {
-    inviting = true;
-    errorMsg = '';
-
-    const res = await fetch('/api/users/invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: form.email.trim().toLowerCase(),
-        role: form.role
-      })
-    });
-
-    const payload = await res.json();
-    inviting = false;
-
-    if (!res.ok) {
-      errorMsg = payload.error?.message ?? 'Failed to send invite';
-      return;
-    }
-
-    resetForm();
-    await loadUsers();
+  function formatDate(dateString: string): string {
+    return new Intl.DateTimeFormat('de-AT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(dateString));
   }
 
-  function startEdit(user: AppUser) {
-    editingId = user.id;
-    form = {
-      email: user.email,
-      role: user.role,
-      driverId: user.driverId ?? ''
-    };
+  function getRoleBadgeClass(role: string): string {
+    const baseClass = 'px-3 py-1 rounded-full text-xs font-semibold';
+    switch (role) {
+      case 'admin':
+        return `${baseClass} bg-red-100 text-red-800`;
+      case 'manager':
+        return `${baseClass} bg-blue-100 text-blue-800`;
+      case 'driver':
+        return `${baseClass} bg-purple-100 text-purple-800`;
+      default:
+        return `${baseClass} bg-slate-100 text-slate-800`;
+    }
   }
 
-  function resetForm() {
-    editingId = null;
-    form = { email: '', role: 'manager', driverId: '' };
+  function openEditModal(user: any) {
+    selectedUser = user;
+    editData = { role: user.role };
+    showEditModal = true;
   }
 
-  async function remove(user: AppUser) {
-    if (!confirm(`Delete local access mapping for ${user.email}?`)) {
-      return;
-    }
-
-    deletingId = user.id;
-    const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
-    const payload = await res.json();
-    deletingId = null;
-
-    if (!res.ok) {
-      errorMsg = payload.error?.message ?? 'Failed to delete user';
-      return;
-    }
-
-    if (editingId === user.id) {
-      resetForm();
-    }
-
-    await loadUsers();
+  function openLinkModal(user: any) {
+    selectedUser = user;
+    linkData = { profileType: '', profileId: '' };
+    showLinkModal = true;
   }
 
-  onMount(() => {
-    void loadUsers();
-  });
+  function closeModals() {
+    showEditModal = false;
+    showLinkModal = false;
+    selectedUser = null;
+  }
+
+  async function updateUserRole() {
+    if (!selectedUser || !editData.role) return;
+
+    try {
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: editData.role })
+      });
+
+      if (!response.ok) throw new Error('Update failed');
+      closeModals();
+      window.location.reload();
+    } catch (err) {
+      alert(`Update failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  async function linkUserProfile() {
+    if (!selectedUser || !linkData.profileType || !linkData.profileId) return;
+
+    try {
+      const response = await fetch(`/api/users/${selectedUser.id}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileType: linkData.profileType,
+          profileId: linkData.profileId
+        })
+      });
+
+      if (!response.ok) throw new Error('Link failed');
+      closeModals();
+      window.location.reload();
+    } catch (err) {
+      alert(`Link failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  async function deleteUser(userId: string) {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Delete failed');
+      window.location.reload();
+    } catch (err) {
+      alert(`Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  function handlePageChange(newSkip: number) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('skip', newSkip.toString());
+    window.location.href = url.toString();
+  }
 </script>
 
-<div class="grid gap-6 lg:grid-cols-[360px,minmax(0,1fr)]">
-  <section class="bg-white rounded-xl border shadow-sm p-5 space-y-4">
-    <div>
-      <h2 class="text-xl font-semibold">{editingId ? 'Edit User Role' : 'Add User Role'}</h2>
-      <p class="text-sm text-slate-500 mt-1">
-        Supabase handles identity. This page maps Supabase emails to app roles.
-      </p>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+  <div class="mx-auto max-w-7xl">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-slate-900 mb-2">User Management</h1>
+      <p class="text-lg text-slate-600">Manage users, assign roles, and link profiles</p>
     </div>
 
-    <div class="space-y-3">
-      <input bind:value={form.email} class="w-full rounded-lg border px-3 py-2" placeholder="staff@royal-ecars.com" type="email" />
-      <select bind:value={form.role} class="w-full rounded-lg border px-3 py-2">
-        <option value="admin">Admin</option>
-        <option value="manager">Manager</option>
-        <option value="driver">Driver</option>
-      </select>
-
-      {#if form.role === 'driver'}
-        <select bind:value={form.driverId} class="w-full rounded-lg border px-3 py-2">
-          <option value="">Select linked driver profile</option>
-          {#each drivers as driver}
-            <option value={driver.id}>{driver.name} (#{driver.id})</option>
-          {/each}
-        </select>
-      {/if}
-    </div>
-
-    <div class="rounded-lg bg-slate-50 border p-3 text-sm text-slate-600">
-      Driver role should always be linked to a driver profile to avoid access issues.
-    </div>
-
-    {#if errorMsg}
-      <p class="text-sm text-red-600">{errorMsg}</p>
-    {/if}
-
-    <div class="flex gap-2">
-      <button
-        class="flex-1 bg-brand hover:bg-brand-dark text-white rounded-lg py-2 font-semibold disabled:opacity-60"
-        on:click={save}
-        disabled={saving}
-      >{saving ? 'Saving…' : editingId ? 'Update mapping' : 'Create mapping'}</button>
-      {#if !editingId}
-        <button
-          class="flex-1 bg-slate-900 hover:bg-black text-white rounded-lg py-2 font-semibold disabled:opacity-60"
-          on:click={inviteAndSave}
-          disabled={inviting}
-        >{inviting ? 'Inviting…' : 'Invite + Create mapping'}</button>
-      {/if}
-      {#if editingId}
-        <button class="px-4 rounded-lg border hover:bg-slate-50 text-sm" on:click={resetForm}>Cancel</button>
-      {/if}
-    </div>
-  </section>
-
-  <section class="space-y-3">
-    <div class="flex items-end justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold">Authorized App Users</h2>
-        <p class="text-sm text-slate-500">Only admins can manage role mappings.</p>
-      </div>
-      <button class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50" on:click={loadUsers}>Refresh</button>
-    </div>
-
-    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-      {#if loading}
-        <p class="p-4 text-sm text-slate-500">Loading users…</p>
-      {:else if users.length === 0}
-        <div class="p-8 text-center">
-          <p class="text-2xl mb-2">👤</p>
-          <p class="text-sm text-slate-500">No local role mappings yet. The first Supabase login will create the first admin if the table is empty.</p>
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Search -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-900 mb-2">Search by Email</label>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              bind:value={searchInput}
+              placeholder="user@example.com"
+              class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              on:click={handleSearch}
+              class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Search
+            </button>
+          </div>
         </div>
-      {:else}
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left">
+
+        <!-- Role Filter -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-900 mb-2">Filter by Role</label>
+          <select
+            value={selectedRole}
+            on:change={(e) => handleRoleFilter(e.currentTarget.value)}
+            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {#each roleOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- Stats -->
+        <div>
+          <p class="text-sm font-semibold text-slate-900 mb-2">Total Users</p>
+          <p class="text-3xl font-bold text-blue-600">{data.pagination.total}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Role</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Linked Profile</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Created</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if data.users.length === 0}
               <tr>
-                <th class="px-4 py-2 font-medium text-slate-600">Email</th>
-                <th class="px-4 py-2 font-medium text-slate-600">Role</th>
-                <th class="px-4 py-2 font-medium text-slate-600">Created</th>
-                <th class="px-4 py-2 font-medium text-slate-600">Actions</th>
+                <td colspan="5" class="px-6 py-12 text-center text-slate-500">No users found</td>
               </tr>
-            </thead>
-            <tbody>
-              {#each users as user (user.id)}
-                <tr class="border-t hover:bg-slate-50 transition-colors {editingId === user.id ? 'bg-teal-50' : ''}">
-                  <td class="px-4 py-2 font-medium">
-                    {user.email}
-                    {#if data.currentUserId === user.id}
-                      <span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">you</span>
-                    {/if}
-                  </td>
-                  <td class="px-4 py-2">
-                    <span class="rounded-full px-2 py-0.5 text-xs font-medium {user.role === 'admin' ? 'bg-emerald-100 text-emerald-700' : user.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">
-                      {user.role}
+            {:else}
+              {#each data.users as user (user.id)}
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors" transition:fade>
+                  <td class="px-6 py-4 font-medium text-slate-900">{user.email}</td>
+                  <td class="px-6 py-4">
+                    <span class={getRoleBadgeClass(user.role)}>
+                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </span>
                   </td>
-                  <td class="px-4 py-2 text-slate-600">{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td class="px-4 py-2">
-                    <div class="flex gap-1">
+                  <td class="px-6 py-4 text-slate-600">
+                    {#if user.linkedProfile === 'Driver'}
+                      <span class="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full font-medium">
+                        🚗 {user.driverName}
+                      </span>
+                    {:else if user.linkedProfile === 'Customer'}
+                      <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium">
+                        👤 {user.customerName}
+                      </span>
+                    {:else}
+                      <span class="text-slate-500 italic">Not linked</span>
+                    {/if}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-600">{formatDate(user.createdAt)}</td>
+                  <td class="px-6 py-4 text-center">
+                    <div class="flex justify-center gap-2">
                       <button
-                        class="px-2 py-1 text-xs rounded border hover:bg-teal-50 hover:border-brand"
-                        on:click={() => startEdit(user)}
-                      >Edit</button>
+                        on:click={() => openEditModal(user)}
+                        class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs rounded font-medium transition-colors"
+                      >
+                        ⚙️ Edit Role
+                      </button>
                       <button
-                        class="px-2 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                        disabled={deletingId === user.id || data.currentUserId === user.id}
-                        on:click={() => remove(user)}
-                      >{deletingId === user.id ? '…' : 'Delete'}</button>
+                        on:click={() => openLinkModal(user)}
+                        class="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs rounded font-medium transition-colors"
+                      >
+                        🔗 Link Profile
+                      </button>
+                      <button
+                        on:click={() => deleteUser(user.id)}
+                        class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs rounded font-medium transition-colors"
+                      >
+                        🗑️ Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
               {/each}
-            </tbody>
-          </table>
+            {/if}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+        <p class="text-slate-600">
+          Showing {data.pagination.skip + 1} - {Math.min(data.pagination.skip + data.pagination.take, data.pagination.total)} of {data.pagination.total} users
+        </p>
+        <div class="flex gap-2">
+          <button
+            on:click={() => handlePageChange(Math.max(0, data.pagination.skip - data.pagination.take))}
+            disabled={data.pagination.skip === 0}
+            class="px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:bg-slate-100 disabled:text-slate-400 text-slate-900 rounded-lg font-medium transition-colors"
+          >
+            ← Previous
+          </button>
+          <button
+            on:click={() => handlePageChange(data.pagination.skip + data.pagination.take)}
+            disabled={!data.pagination.hasMore}
+            class="px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:bg-slate-100 disabled:text-slate-400 text-slate-900 rounded-lg font-medium transition-colors"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Role Modal -->
+{#if showEditModal && selectedUser}
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" transition:fade>
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6" transition:fade>
+      <h3 class="text-2xl font-bold text-slate-900 mb-4">Edit User Role</h3>
+      <p class="text-slate-600 mb-6">{selectedUser.email}</p>
+
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-slate-900 mb-2">Select Role</label>
+        <select
+          bind:value={editData.role}
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="admin">Admin</option>
+          <option value="manager">Manager</option>
+          <option value="driver">Driver</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button
+          on:click={() => closeModals()}
+          class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          on:click={updateUserRole}
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+        >
+          Update Role
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Link Profile Modal -->
+{#if showLinkModal && selectedUser}
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" transition:fade>
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6" transition:fade>
+      <h3 class="text-2xl font-bold text-slate-900 mb-4">Link Profile</h3>
+      <p class="text-slate-600 mb-6">{selectedUser.email}</p>
+
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-slate-900 mb-2">Profile Type</label>
+        <select
+          bind:value={linkData.profileType}
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Select profile type...</option>
+          <option value="driver">Driver</option>
+          <option value="customer">Customer</option>
+        </select>
+      </div>
+
+      {#if linkData.profileType === 'driver'}
+        <div class="mb-6">
+          <label class="block text-sm font-semibold text-slate-900 mb-2">Select Driver</label>
+          <select
+            bind:value={linkData.profileId}
+            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-48 overflow-y-auto"
+          >
+            <option value="">Choose a driver...</option>
+            {#each data.linkedProfileOptions.availableDrivers as driver}
+              <option value={driver.id}>
+                {driver.name} ({driver.license})
+              </option>
+            {/each}
+          </select>
+        </div>
+      {:else if linkData.profileType === 'customer'}
+        <div class="mb-6">
+          <label class="block text-sm font-semibold text-slate-900 mb-2">Select Customer</label>
+          <select
+            bind:value={linkData.profileId}
+            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-48 overflow-y-auto"
+          >
+            <option value="">Choose a customer...</option>
+            {#each data.linkedProfileOptions.availableCustomers as customer}
+              <option value={customer.id}>
+                {customer.name} ({customer.email})
+              </option>
+            {/each}
+          </select>
         </div>
       {/if}
+
+      <div class="flex justify-end gap-3">
+        <button
+          on:click={() => closeModals()}
+          class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          on:click={linkUserProfile}
+          disabled={!linkData.profileType || !linkData.profileId}
+          class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+        >
+          Link Profile
+        </button>
+      </div>
     </div>
-  </section>
-</div>
+  </div>
+{/if}
+
+<style global>
+  /* Tailwind classes are defined here implicitly */
+</style>

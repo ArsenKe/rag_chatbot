@@ -70,6 +70,28 @@ enum NotificationType {
   review_received
 }
 
+enum WithdrawalStatus {
+  pending
+  approved
+  processing
+  completed
+  rejected
+  cancelled
+}
+
+enum ReviewType {
+  ride
+  tour
+}
+
+enum ReviewRating {
+  one
+  two
+  three
+  four
+  five
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -79,6 +101,7 @@ model User {
   customerId BigInt?
   createdAt DateTime @default(now())
   notifications Notification[]
+  reviews   Review[] @relation("ReviewByUser")
   customer  Customer?
 }
 
@@ -97,6 +120,7 @@ model Driver {
   availabilities            DriverAvailability[]
   trips                     Trip[]
   cityTours                 CityTour[]
+  withdrawals               Withdrawal[]
 }
 
 // Ordered stop in the walking/driving city-tour audio guide, tier-agnostic
@@ -145,6 +169,7 @@ model CityTour {
   endedAt           DateTime?
 
   driver Driver @relation(fields: [driverId], references: [id])
+  reviews Review[]
 
   @@index([driverId, startedAt])
   @@index([driverId, scheduledStartAt, scheduledEndAt])
@@ -242,6 +267,7 @@ model Trip {
   dropoffLocation Location  @relation("dropoffLocation", fields: [dropoffLocationId], references: [id])
   payments        Payment[]
   invoices        Invoice[]
+  reviews         Review[]
 
   @@index([startTime, endTime])
   @@index([driverId, startTime])
@@ -328,6 +354,57 @@ model Notification {
 
   @@index([userId, isRead, createdAt])
   @@index([userId, createdAt])
+}
+
+model Withdrawal {
+  id              BigInt            @id @default(autoincrement())
+  driverId        BigInt
+  amount          Decimal           @db.Decimal(12, 2)
+  status          WithdrawalStatus  @default(pending)
+  requestedAt     DateTime          @default(now())
+  approvedAt      DateTime?
+  approvedBy      String?           // admin userId
+  processedAt     DateTime?
+  completedAt     DateTime?
+  rejectionReason String?
+  bankName        String?
+  bankAccount     String?           // encrypted
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@index([driverId, status])
+  @@index([status, requestedAt])
+  @@index([createdAt])
+}
+
+model Review {
+  id              BigInt      @id @default(autoincrement())
+  reviewerId      String      // User ID (reviewer)
+  revieweeId      BigInt?     // Driver ID (being reviewed for rides/tours) or Customer ID
+  tripId          BigInt?     // For ride reviews
+  cityTourId      BigInt?     // For tour reviews
+  type            ReviewType  // ride or tour
+  rating          Int         @db.SmallInt // 1-5 stars
+  title           String?
+  comment         String?
+  isAnonymous     Boolean     @default(false)
+  isVerified      Boolean     @default(true) // User completed the trip/tour
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  reviewer  User      @relation("ReviewByUser", fields: [reviewerId], references: [id], onDelete: Cascade)
+  trip      Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  cityTour  CityTour? @relation(fields: [cityTourId], references: [id], onDelete: SetNull)
+
+  @@index([revieweeId, type])
+  @@index([tripId])
+  @@index([cityTourId])
+  @@index([reviewerId])
+  @@index([rating])
+  @@index([createdAt])
 }
 
 // Star schema for analytics

@@ -9,6 +9,7 @@ export const HOME_BY_ROLE: Record<AppRole, string> = {
 export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>> = {
   admin: [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dispatch', label: 'Dispatch' },
     { href: '/revenue', label: 'Revenue' },
     { href: '/users', label: 'Users' },
     { href: '/knowledge', label: 'Knowledge' },
@@ -23,6 +24,7 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
   ],
   manager: [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dispatch', label: 'Dispatch' },
     { href: '/revenue', label: 'Revenue' },
     { href: '/bookings', label: 'Bookings' },
     { href: '/calendar', label: 'Calendar' },
@@ -36,15 +38,17 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
   driver: [
     { href: '/tours', label: 'City Tour' },
     { href: '/earnings', label: 'My Earnings' },
+    { href: '/driver-withdrawals', label: 'Withdrawals' },
+    { href: '/ratings', label: 'My Ratings' },
     { href: '/dashboard', label: 'Analytics' },
     { href: '/calendar', label: 'My Schedule' }
   ]
 };
 
 const ALLOWED_PREFIXES: Record<AppRole, string[]> = {
-  admin: ['/dashboard', '/revenue', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
-  manager: ['/dashboard', '/revenue', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
-  driver: ['/tours', '/earnings', '/dashboard', '/calendar', '/notifications']
+  admin: ['/dashboard', '/dispatch', '/revenue', '/users', '/withdrawals', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  manager: ['/dashboard', '/dispatch', '/revenue', '/withdrawals', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  driver: ['/tours', '/earnings', '/driver-withdrawals', '/ratings', '/dashboard', '/calendar', '/notifications']
 };
 
 export function canAccessAppPath(role: AppRole, pathname: string): boolean {

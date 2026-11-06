@@ -33,15 +33,16 @@ export const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string }>
   ],
   driver: [
     { href: '/tours', label: 'City Tour' },
+    { href: '/earnings', label: 'My Earnings' },
     { href: '/dashboard', label: 'Analytics' },
     { href: '/calendar', label: 'My Schedule' }
   ]
 };
 
 const ALLOWED_PREFIXES: Record<AppRole, string[]> = {
-  admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports'],
-  manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports'],
-  driver: ['/tours', '/dashboard', '/calendar']
+  admin: ['/dashboard', '/users', '/knowledge', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  manager: ['/dashboard', '/drivers', '/cars', '/customers', '/locations', '/bookings', '/calendar', '/tour-pricing', '/reports', '/notifications'],
+  driver: ['/tours', '/earnings', '/dashboard', '/calendar', '/notifications']
 };
 
 export function canAccessAppPath(role: AppRole, pathname: string): boolean {

@@ -3,7 +3,7 @@ import {
   createNotification,
   notifyTripEvent,
   notifyPaymentReceived
-} from './notification-service';
+} from '$lib/server/notifications/notification-service';
 import { calculateAndUpdateTripPayout } from './payout-service';
 
 /**

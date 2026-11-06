@@ -4,7 +4,7 @@ import {
   notifyTripEvent,
   notifyPaymentReceived
 } from '$lib/server/notifications/notification-service';
-import { calculateAndUpdateTripPayout } from './payout-service';
+import { calculateAndUpdateTripPayout } from '$lib/server/payouts/payout-service';
 
 /**
  * Trip event handler service

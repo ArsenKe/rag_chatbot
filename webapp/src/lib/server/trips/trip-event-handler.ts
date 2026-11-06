@@ -1,4 +1,4 @@
-import { db } from '$lib/server/db/client';
+import { prisma } from '$lib/server/db/client';
 import {
   createNotification,
   notifyTripEvent,
@@ -21,7 +21,7 @@ export async function handleTripStarted(tripId: bigint): Promise<any> {
   try {
     console.log(`[Event] Trip started: ${tripId}`);
 
-    const trip = await db.trip.findUnique({
+    const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       select: {
         id: true,
@@ -49,7 +49,7 @@ export async function handleTripStarted(tripId: bigint): Promise<any> {
     }
 
     // Update trip status
-    const updated = await db.trip.update({
+    const updated = await prisma.trip.update({
       where: { id: tripId },
       data: {
         status: 'in_progress',
@@ -58,7 +58,7 @@ export async function handleTripStarted(tripId: bigint): Promise<any> {
     });
 
     // Update driver status
-    await db.driver.update({
+    await prisma.driver.update({
       where: { id: trip.driverId },
       data: { status: 'on_trip' }
     });
@@ -96,7 +96,7 @@ export async function handleTripCompleted(tripId: bigint): Promise<any> {
   try {
     console.log(`[Event] Trip completed: ${tripId}`);
 
-    const trip = await db.trip.findUnique({
+    const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       select: {
         id: true,
@@ -125,7 +125,7 @@ export async function handleTripCompleted(tripId: bigint): Promise<any> {
     }
 
     // Update trip status
-    const updated = await db.trip.update({
+    const updated = await prisma.trip.update({
       where: { id: tripId },
       data: {
         status: 'completed',
@@ -152,7 +152,7 @@ export async function handleTripCompleted(tripId: bigint): Promise<any> {
 
     // Update driver status back to active
     try {
-      await db.driver.update({
+      await prisma.driver.update({
         where: { id: trip.driverId },
         data: { status: 'active' }
       });
@@ -177,7 +177,7 @@ export async function handleTripCancelled(tripId: bigint, reason?: string): Prom
   try {
     console.log(`[Event] Trip cancelled: ${tripId}, reason: ${reason || 'unknown'}`);
 
-    const trip = await db.trip.findUnique({
+    const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       select: {
         id: true,
@@ -205,7 +205,7 @@ export async function handleTripCancelled(tripId: bigint, reason?: string): Prom
     }
 
     // Update trip status
-    const updated = await db.trip.update({
+    const updated = await prisma.trip.update({
       where: { id: tripId },
       data: {
         status: 'cancelled'
@@ -228,7 +228,7 @@ export async function handleTripCancelled(tripId: bigint, reason?: string): Prom
 
     // Update driver status back to active
     try {
-      await db.driver.update({
+      await prisma.driver.update({
         where: { id: trip.driverId },
         data: { status: 'active' }
       });
@@ -252,7 +252,7 @@ export async function handleTourStarted(tripId: bigint): Promise<any> {
   try {
     console.log(`[Event] Tour started: ${tripId}`);
 
-    const trip = await db.trip.findUnique({
+    const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       select: {
         id: true,
@@ -265,7 +265,7 @@ export async function handleTourStarted(tripId: bigint): Promise<any> {
       throw new Error(`Trip ${tripId} not found`);
     }
 
-    const updated = await db.trip.update({
+    const updated = await prisma.trip.update({
       where: { id: tripId },
       data: {
         status: 'in_progress',
@@ -302,7 +302,7 @@ export async function handleTourCompleted(tripId: bigint): Promise<any> {
   try {
     console.log(`[Event] Tour completed: ${tripId}`);
 
-    const trip = await db.trip.findUnique({
+    const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       select: {
         id: true,
@@ -316,7 +316,7 @@ export async function handleTourCompleted(tripId: bigint): Promise<any> {
       throw new Error(`Trip ${tripId} not found`);
     }
 
-    const updated = await db.trip.update({
+    const updated = await prisma.trip.update({
       where: { id: tripId },
       data: {
         status: 'completed',

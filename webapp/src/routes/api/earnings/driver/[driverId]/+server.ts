@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/server/db/client';
+import { prisma } from '$lib/server/db/client';
 import { getDriverEarnings } from '$lib/server/payouts/payout-service';
 import { Decimal } from '@prisma/client/runtime/library';
 

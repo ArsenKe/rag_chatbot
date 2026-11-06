@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { db } from '$lib/server/db/client';
+import { prisma } from '$lib/server/db/client';
 import { getDriverEarnings } from '$lib/server/payouts/payout-service';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   }
 
   // Get driver associated with this user
-  const driver = await db.driver.findFirst({
+  const driver = await prisma.driver.findFirst({
     where: { userId: locals.user.id }
   });
 
@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const summary = await getDriverEarnings(driver.id, startDate, now);
 
   // Get trip breakdown
-  const trips = await db.trip.findMany({
+  const trips = await prisma.trip.findMany({
     where: {
       driverId: driver.id,
       status: 'completed',
@@ -74,7 +74,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     take
   });
 
-  const totalTripsCount = await db.trip.count({
+  const totalTripsCount = await prisma.trip.count({
     where: {
       driverId: driver.id,
       status: 'completed',

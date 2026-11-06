@@ -27,9 +27,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     prisma.user.findMany({
       where: whereClause,
       include: {
-        driver: {
-          select: { id: true, name: true }
-        },
         customer: {
           select: { id: true, name: true }
         }
@@ -56,7 +53,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         : 'None',
     driverId: user.driverId?.toString() ?? null,
     customerId: user.customerId?.toString() ?? null,
-    driverName: user.driver?.name ?? null,
     customerName: user.customer?.name ?? null
   }));
 

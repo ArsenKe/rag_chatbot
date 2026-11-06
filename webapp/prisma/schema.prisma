@@ -102,6 +102,7 @@ model User {
   createdAt DateTime @default(now())
   notifications Notification[]
   reviews   Review[] @relation("ReviewByUser")
+  driver    Driver?  @relation(fields: [driverId], references: [id])
   customer  Customer?
 }
 
@@ -121,6 +122,7 @@ model Driver {
   trips                     Trip[]
   cityTours                 CityTour[]
   withdrawals               Withdrawal[]
+  user                      User?
 }
 
 // Ordered stop in the walking/driving city-tour audio guide, tier-agnostic

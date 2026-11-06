@@ -97,7 +97,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
           }
         },
         driver: true,
-        assignedCar: true
+        car: true
       },
       orderBy: {
         startTime: 'desc'
@@ -114,7 +114,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
       customerPhone: trip.booking?.customer?.phone ?? null,
       driverName: trip.driver?.user?.name ?? 'Unknown',
       driverId: trip.driver?.id.toString() ?? null,
-      vehicleInfo: trip.assignedCar ? `${trip.assignedCar.make} ${trip.assignedCar.model}` : null,
+      vehicleInfo: trip.car ? `${trip.car.make} ${trip.car.model}` : null,
       totalAmount: trip.totalAmount?.toString() ?? '0',
       platformFee: trip.platformFee?.toString() ?? '0',
       driverPayout: trip.driverPayout?.toString() ?? '0',

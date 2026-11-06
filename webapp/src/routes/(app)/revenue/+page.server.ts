@@ -106,7 +106,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
           }
         },
         driver: true,
-        assignedCar: true
+        car: true
       },
       orderBy: {
         endTime: 'desc'
@@ -258,8 +258,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     startTime: trip.startTime?.toISOString() ?? null,
     endTime: trip.endTime?.toISOString() ?? null,
     customerName: trip.booking?.customer?.name ?? 'Unknown',
-    driverName: trip.driver?.user?.name ?? 'Unknown',
-    vehicleInfo: trip.assignedCar ? `${trip.assignedCar.make} ${trip.assignedCar.model}` : 'Unknown',
+    driverName: trip.driver?.name ?? 'Unknown',
+    vehicleInfo: trip.car ? `${trip.car.make} ${trip.car.model}` : 'Unknown',
     totalAmount: trip.totalAmount?.toString() ?? '0',
     platformFee: trip.platformFee?.toString() ?? '0',
     driverPayout: trip.driverPayout?.toString() ?? '0',

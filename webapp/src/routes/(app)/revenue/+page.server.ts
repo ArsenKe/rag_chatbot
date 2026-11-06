@@ -3,6 +3,7 @@ import { prisma } from '$lib/server/db/client';
 import { requireRole } from '$lib/server/rbac/roles';
 import { Decimal } from '@prisma/client/runtime/library';
 
+// Force rebuild - v2
 export const load: PageServerLoad = async ({ locals, url }) => {
   // Only admins and managers can view platform revenue
   requireRole(locals.user?.role, ['admin', 'manager']);

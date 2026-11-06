@@ -184,9 +184,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       id: {
         in: topDriverIds
       }
-    },
-    include: {
-      user: true
     }
   });
 
@@ -194,7 +191,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     const driver = driverDetails.find(d => d.id === earnings.driverId);
     return {
       driverId: earnings.driverId,
-      driverName: driver?.user?.name ?? 'Unknown Driver',
+      driverName: driver?.name ?? 'Unknown Driver',
       tripsCount: earnings._count,
       totalRevenue: earnings._sum.totalAmount?.toString() ?? '0',
       driverPayout: earnings._sum.driverPayout?.toString() ?? '0',

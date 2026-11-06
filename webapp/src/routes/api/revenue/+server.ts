@@ -96,11 +96,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
             customer: true
           }
         },
-        driver: {
-          include: {
-            user: true
-          }
-        },
+        driver: true,
         assignedCar: true
       },
       orderBy: {

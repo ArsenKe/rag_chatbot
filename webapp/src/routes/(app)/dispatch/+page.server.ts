@@ -22,7 +22,6 @@ export const load: PageServerLoad = async ({ locals }) => {
         status: 'active'
       },
       include: {
-        user: true,
         trips: {
           where: {
             status: 'in_progress'
@@ -43,7 +42,6 @@ export const load: PageServerLoad = async ({ locals }) => {
         status: 'on_trip'
       },
       include: {
-        user: true,
         trips: {
           where: {
             status: 'in_progress'
@@ -53,11 +51,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             car: true,
             pickupLocation: true,
             dropoffLocation: true,
-            customer: {
-              include: {
-                user: true
-              }
-            }
+            customer: true
           }
         }
       },
@@ -75,18 +69,10 @@ export const load: PageServerLoad = async ({ locals }) => {
       include: {
         booking: true,
         car: true,
-        customer: {
-          include: {
-            user: true
-          }
-        },
+        customer: true,
         pickupLocation: true,
         dropoffLocation: true,
-        driver: {
-          include: {
-            user: true
-          }
-        }
+        driver: true
       },
       orderBy: {
         startTime: 'asc'
@@ -101,18 +87,10 @@ export const load: PageServerLoad = async ({ locals }) => {
       include: {
         booking: true,
         car: true,
-        customer: {
-          include: {
-            user: true
-          }
-        },
+        customer: true,
         pickupLocation: true,
         dropoffLocation: true,
-        driver: {
-          include: {
-            user: true
-          }
-        }
+        driver: true
       },
       orderBy: {
         startTime: 'desc'
@@ -136,16 +114,8 @@ export const load: PageServerLoad = async ({ locals }) => {
           }
         },
         include: {
-          driver: {
-            include: {
-              user: true
-            }
-          },
-          customer: {
-            include: {
-              user: true
-            }
-          }
+          driver: true,
+          customer: true
         },
         orderBy: {
           endTime: 'desc'
@@ -171,21 +141,17 @@ export const load: PageServerLoad = async ({ locals }) => {
   // Format available drivers for display
   const formattedAvailableDrivers = availableDrivers.map(driver => ({
     id: driver.id.toString(),
-    name: driver.user?.name ?? 'Unknown',
-    phone: driver.user?.phone ?? null,
-    email: driver.user?.email ?? null,
+    name: driver.name ?? 'Unknown',
+    phone: driver.phone ?? null,
     status: driver.status,
-    rating: driver.rating?.toString() ?? null,
-    acceptedTripsCount: driver.acceptedTripsCount,
-    cancelledTripsCount: driver.cancelledTripsCount,
     activeTripsCount: driver.trips.length
   }));
 
   // Format drivers currently on trip
   const formattedDriversOnTrip = driversOnTrip.map(driver => ({
     id: driver.id.toString(),
-    name: driver.user?.name ?? 'Unknown',
-    phone: driver.user?.phone ?? null,
+    name: driver.name ?? 'Unknown',
+    phone: driver.phone ?? null,
     status: driver.status,
     currentTrip: driver.trips.length > 0 ? {
       id: driver.trips[0]?.id.toString() ?? null,
@@ -225,7 +191,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     notes: trip.booking?.notes ?? null,
     assignedDriver: trip.driver ? {
       id: trip.driver.id.toString(),
-      name: trip.driver.user?.name ?? 'Unknown'
+      name: trip.driver.name ?? 'Unknown'
     } : null
   }));
 
@@ -238,7 +204,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     durationMinutes: trip.durationMinutes,
     customerName: trip.customer?.name ?? 'Unknown',
     customerPhone: trip.customer?.phone ?? null,
-    driverName: trip.driver?.user?.name ?? 'Unknown',
+    driverName: trip.driver?.name ?? 'Unknown',
     driverId: trip.driver?.id.toString() ?? null,
     vehicleInfo: `${trip.car?.make} ${trip.car?.model} (${trip.car?.licensePlate})`,
     pickupLocation: trip.pickupLocation?.name ?? 'Unknown',
@@ -251,7 +217,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     id: trip.id.toString(),
     endTime: trip.endTime?.toISOString() ?? null,
     customerName: trip.customer?.name ?? 'Unknown',
-    driverName: trip.driver?.user?.name ?? 'Unknown',
+    driverName: trip.driver?.name ?? 'Unknown',
     totalAmount: trip.totalAmount?.toString() ?? '0',
     platformFee: trip.platformFee?.toString() ?? '0',
     driverPayout: trip.driverPayout?.toString() ?? '0'

@@ -97,7 +97,7 @@ model User {
   email     String   @unique
   role      Role
   passwordHash String?
-  driverId  BigInt?
+  driverId  BigInt?  @unique
   customerId BigInt?
   createdAt DateTime @default(now())
   notifications Notification[]

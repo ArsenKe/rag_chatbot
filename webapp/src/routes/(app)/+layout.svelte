@@ -1,5 +1,6 @@
 <script lang="ts">
   import { NAV_BY_ROLE } from '$lib/rbac/policy';
+  import NotificationBell from '$lib/components/NotificationBell.svelte';
 
   export let data;
 
@@ -26,6 +27,7 @@
         {#each NAV_BY_ROLE[data.user?.role] ?? NAV_BY_ROLE.manager as item}
           <a class="hover:text-brand" href={item.href}>{item.label}</a>
         {/each}
+        <NotificationBell />
         <button class="rounded-lg border px-3 py-1.5 hover:border-brand hover:text-brand" on:click={logout}>Sign out</button>
       </nav>
     </div>
